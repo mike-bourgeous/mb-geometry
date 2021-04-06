@@ -35,44 +35,55 @@ RSpec.describe(MB::Delaunay) do
     let(:p11) { MB::Delaunay::Point.new(2, 1) }
     let(:p12) { MB::Delaunay::Point.new(1, 2) }
 
+    let(:ccw) {
+      [p2, p4, p3, p5, p0, p8, p6, p11, p7, p12]
+    }
+
+    pending '#first'
+    pending '#clockwise'
+    pending '#counterclockwise'
+    pending '#remove'
+
     describe '#add' do
-      it 'can add points around the origin in counterclockwise order' do
-        p1.add(p2)
-        p1.add(p4)
-        p1.add(p3)
-        p1.add(p5)
-        p1.add(p0)
-        p1.add(p8)
-        p1.add(p6)
-        p1.add(p11)
-        p1.add(p7)
-        p1.add(p12)
+      cases = {
+        counterclockwise: -> { ccw },
+        counterclockwise_rotated: -> { ccw.rotate(4) },
+        clockwise: -> { ccw.reverse },
+        clockwise_rotated: -> { ccw.reverse.rotate(4) },
+        left_to_right: -> { ccw.sort },
+        right_to_left: -> { ccw.sort.reverse },
+        bottom_to_top: -> { ccw.sort_by { |p| [p.y, p.x] } },
+        top_to_bottom: -> { ccw.sort_by { |p| [-p.y, p.x] } },
+        random: -> { ccw.shuffle(random: Random.new(RSpec.configuration.seed)) }
+      }
 
-        expect(p1.counterclockwise(p2)).to eq(p4)
-        expect(p1.counterclockwise(p4)).to eq(p3)
-        expect(p1.counterclockwise(p3)).to eq(p5)
-        expect(p1.counterclockwise(p5)).to eq(p0)
-        expect(p1.counterclockwise(p0)).to eq(p8)
-        expect(p1.counterclockwise(p8)).to eq(p6)
-        expect(p1.counterclockwise(p6)).to eq(p11)
-        expect(p1.counterclockwise(p11)).to eq(p7)
-        expect(p1.counterclockwise(p7)).to eq(p12)
-        expect(p1.counterclockwise(p12)).to eq(p2)
+      cases.each do |name, pts|
+        it "can add points around the origin in #{name.to_s.gsub('_', ' ')} order" do
+          points = instance_exec(&pts)
 
-        expect(p1.clockwise(p4)).to eq(p2)
-        expect(p1.clockwise(p3)).to eq(p4)
-        expect(p1.clockwise(p5)).to eq(p3)
-        expect(p1.clockwise(p0)).to eq(p5)
-        expect(p1.clockwise(p8)).to eq(p0)
-        expect(p1.clockwise(p6)).to eq(p8)
-        expect(p1.clockwise(p11)).to eq(p6)
-        expect(p1.clockwise(p7)).to eq(p11)
-        expect(p1.clockwise(p12)).to eq(p7)
-        expect(p1.clockwise(p2)).to eq(p12)
+          points.each do |p|
+            p1.add(p)
+          end
+
+          ccw.each_with_index do |p, idx|
+            p2 = ccw[(idx + 1) % ccw.length]
+            expect(p1.counterclockwise(p)).to eq(p2)
+          end
+
+          # TODO: Verify #first behaves correctly for convex hull navigation
+        end
       end
 
-      it 'raises an error when adding the same point' do
+      it 'raises an error when adding an identical point to itself' do
         expect { p2.add(MB::Delaunay::Point.new(p2.x, p2.y)) }.to raise_error(/identical/)
+      end
+
+      it 'does not raise an error when adding a collinear point in the opposite direction' do
+        p1.add(p7)
+        expect { p1.add(p5) }.not_to raise_error
+
+        expect(p1.clockwise(p7)).to eq(p5)
+        expect(p1.clockwise(p5)).to eq(p7)
       end
 
       it 'raises an error when adding a point collinear with another neighbor in the same direction' do
