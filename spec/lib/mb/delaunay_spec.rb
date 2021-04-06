@@ -1,4 +1,26 @@
 RSpec.describe(MB::Delaunay) do
+  describe(MB::Delaunay::Hull) do
+    describe '#tangents' do
+      it 'can join two line segments' do
+        p1 = MB::Delaunay::Point.new(-1, 0)
+        p2 = MB::Delaunay::Point.new(-0.9, 1)
+        p1.add(p2)
+        p2.add(p1)
+        left = MB::Delaunay::Hull.new([p1, p2])
+
+        p3 = MB::Delaunay::Point.new(1, 0)
+        p4 = MB::Delaunay::Point.new(0.9, 1)
+        p3.add(p4)
+        p4.add(p3)
+        right = MB::Delaunay::Hull.new([p3, p4])
+
+        tangents = left.tangents(right)
+        puts tangents
+        raise
+      end
+    end
+  end
+
   describe(MB::Delaunay::Point) do
     describe '#cross' do
       it 'returns positive for points to the left of a segment' do

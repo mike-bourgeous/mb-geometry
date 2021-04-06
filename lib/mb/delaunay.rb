@@ -9,8 +9,8 @@ module MB
 
       def initialize(points)
         @points = points
-        @leftmost = points.min_by(&:idx)
-        @rightmost = points.max_by(&:idx)
+        @leftmost = points.min
+        @rightmost = points.max
       end
 
       def add_point(p)
@@ -30,10 +30,10 @@ module MB
       #
       # Called HULL in Lee and Schachter (extended to return both tangents).
       def tangents(right)
-        x = left.rightmost
+        x = self.rightmost
         y = right.leftmost
 
-        raise "Rightmost point on left-side hull #{self} is to the right of leftmost point on right-side hull #{right}"
+        raise "Rightmost point on left-side hull #{self} is to the right of leftmost point on right-side hull #{right}" if x > y
         left = self
 
         # Walk clockwise around left, counterclockwise around right, until the
@@ -156,18 +156,84 @@ module MB
         raise NotImplementedError
       end
 
+      # Adds point +p+ to the correct location in this point's adjacency lists.
       def add(p)
-        raise "Cannot add an identical point as a neighbor of a point" if p == self
+        raise "Cannot add identical point #{p} as a neighbor of #{self}" if p == self
+        raise "Point #{p} is already a neighbor of #{self}" if @cw.include?(p) && @ccw.include?(p)
+        raise "BUG: @cw and @ccw have differing lengths" if @cw.length != @ccw.length
 
-        # Add to cw in sorted order by relative angle
-        # Add to ccw [ditto]
-        raise NotImplementedError
+        if @cw.empty?
+          puts "No existing neighbors on #{self}; #{p} is its own adjacent neighbor" # XXX
+          @cw[p] = p
+          @ccw[p] = p
+        else
+          puts "#{@cw.length} existing neighbors on #{self}; looking for the right place for #{p}" # XXX
+
+          ptr = @cw.keys.first # TODO: @first, and also this is O(edges per node)
+          ptr_next = nil
+
+          # TODO: This loop can probably be simplified
+          loop do
+            puts "Checking #{self}->#{ptr}" # XXX
+            cross = p.cross(self, ptr)
+            if cross < 0
+              puts "New point #{p} is right of #{self}->#{ptr}, moving clockwise" # XXX
+
+              # p is to the right of self->ptr, so iterate clockwise to find surrounding neighbors
+              ptr_next = @cw[ptr]
+
+              if p.cross(self, ptr_next) > 0
+                puts "It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" # XXX
+                @cw[p] = ptr_next
+                @cw[ptr] = p
+                @ccw[ptr_next] = p
+                @ccw[p] = ptr
+                break
+              else
+                ptr = ptr_next
+                ptr_next = nil
+              end
+            elsif cross > 0
+              puts "New point #{p} is left of #{self}->#{ptr}, moving counterclockwise" # XXX
+
+              ptr_next = @ccw[ptr]
+
+              if p.cross(self. ptr_next) < 0
+                puts "It looks like #{p} goes between #{ptr_next} and #{ptr} on #{self}" # XXX
+                @ccw[p] = ptr_next
+                @ccw[ptr] = p
+                @cw[ptr_next] = p
+                @cw[p] = ptr
+                break
+              else
+                ptr = ptr_next
+                ptr_next = nil
+              end
+            else
+              raise "New point #{p} is collinear with #{self} and existing neighbor #{ptr}"
+            end
+          end
+        end
       end
 
+      # Removes point +p+ from this point's adjacency lists.
       def remove(p)
+        raise "BUG: Point #{p} is in only one of @cw and @ccw" if @cw.include?(p) != @ccw.include?(p)
+        raise "Point #{p} is not a neighbor of #{self}" unless @cw.include?(p) && @ccw.include?(p)
+
+        next_cw = @cw[p]
+        next_ccw = @ccw[p]
+
+        # If +p+ is the last adjacent point, then the #delete calls below will
+        # still remove it so that case doesn't need special handling.
+
         # Remove from cw and re-link cw
+        @cw[next_ccw] = next_cw
+        @cw.delete(p)
+
         # Remove from ccw and re-link ccw
-        raise NotImplementedError
+        @ccw[next_cw] = next_ccw
+        @ccw.delete(p)
       end
     end
 
@@ -183,7 +249,6 @@ module MB
     #
     # Analogous to INSERT(A, B) from Lee and Schachter.
     def join(p1, p2)
-      raise NotImplementedError
       p1.add(p2)
       p2.add(p1)
     end
@@ -191,11 +256,12 @@ module MB
     # Analogous to DELETE(A, B) from Lee and Schachter.
     def unjoin(p1, p2)
       p1.remove(p2)
-      p2.remove(p2)
+      p2.remove(p1)
     end
 
     def triangulate(points)
       if points.length <= 3
+        h = Hull.new(points)
         raise NotImplementedError, 'TODO: Trivial triangulation; return as a Hull'
       else
         n = points.length / 2
@@ -205,7 +271,7 @@ module MB
       end
     end
 
-    # Merges two convex hulls that contain locally complete Delauney
+    # Merges two convex hulls that contain locally complete Delaunay
     # triangulations.
     #
     # Called MERGE in Lee and Schachter.
