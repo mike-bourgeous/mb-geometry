@@ -110,19 +110,29 @@ module MB
         end
       end
 
+      # Returns the 2D cross product between the two rays +o+->+p+ and
+      # +o+->self.  If this value is 0, then +p+ and self are on the same line
+      # through o.  If negative, then self is to the right of +o+->+p+.  If
+      # positive, then self is to the left.
+      #
+      # FIXME: this should maybe reordered as a method on +o+?
+      def cross(o, p)
+        (p.x - o.x) * (self.y - o.y) - (p.y - o.y) * (self.x - o.x)
+      end
+
       # Returns true if this point is to the right of the ray from +p1+ to
       # +p2+.  Returns false if left or collinear.
       # TODO: understand better and explain better
       # https://en.wikipedia.org/wiki/Cross_product#Computational_geometry
       # https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
       def right_of?(p1, p2)
-        ((p2.x - p1.x) * (self.y - p1.y) - (p2.y - p1.y) * (self.x - p1.x)) < 0
+        cross(p1, p2) < 0
       end
 
       # Returns true if this point is to the left of the ray from +p1+ to +p2+.
       # Returns false if right or collinear.
       def left_of?(p1, p2)
-        ((p2.x - p1.x) * (self.y - p1.y) - (p2.y - p1.y) * (self.x - p1.x)) > 0
+        cross(p1, p2) > 0
       end
 
       # Returns the next clockwise neighbor to this point from point +p+.
