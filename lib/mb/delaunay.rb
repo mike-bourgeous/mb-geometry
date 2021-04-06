@@ -7,10 +7,11 @@ module MB
       # Analogous to LM(s) and RM(s) in Lee and Schachter.
       attr_reader :leftmost, :rightmost
 
+      # +points+ *must* already be sorted by [x,y].
       def initialize(points)
-        @points = points
-        @leftmost = points.min
-        @rightmost = points.max
+        @points = points.dup
+        @leftmost = points.first
+        @rightmost = points.last
       end
 
       def add_point(p)
@@ -43,15 +44,15 @@ module MB
         # lowest segment.
         z = y.first
         z1 = x.first
-        z2 = x.previous(z1)
+        z2 = x.clockwise(z1)
         loop do
           if z.right_of?(x, y)
             old_z = z
-            z = z.next(y)
+            z = z.counterclockwise(y)
             y = old_z
           elsif z2.right_of?(x, y)
             old_z2 = z2
-            z2 = z2.previous(x)
+            z2 = z2.clockwise(x)
             x = old_z2
           else
             lower = [x, y]
@@ -64,16 +65,16 @@ module MB
         # the highest segment.
         x = left.rightmost
         y = right.leftmost
-        z_r = y.previous(y.first)
+        z_r = y.clockwise(y.first)
         z_l = x.first
         loop do
           if z_r.left_of?(x, y)
             old_z = z_r
-            z_r = z_r.previous(y)
+            z_r = z_r.clockwise(y)
             y = old_z
           elsif z_l.left_of?(x, y)
             old_z = z_l
-            z_l = z_l.next(x)
+            z_l = z_l.counterclockwise(x)
             x = old_z
           else
             upper = [x, y]
@@ -100,6 +101,9 @@ module MB
         @ccw = {}
       end
 
+      # Compares points by X, using Y to break ties.
+      #
+      # Lee and Schachter refer to this as lexicographic ordering.
       def <=>(other)
         return nil unless other.is_a?(Point)
 
@@ -146,7 +150,7 @@ module MB
       # Called PRED(v_i, v_ij) in Lee and Schachter, where v_i is Ruby +self+,
       # and v_ij is +p+.  This uses a Hash, while the 1980 paper mentions a
       # circular doubly-linked list.
-      def previous(p)
+      def clockwise(p)
         @cw[p] || (raise "Point #{p} is not a neighbor of #{self}")
       end
 
@@ -154,7 +158,7 @@ module MB
       # +p+.
       #
       # Called SUCC in Lee and Schachter.
-      def next(p)
+      def counterclockwise(p)
         @ccw[p] || (raise "Point #{p} is not a neighbor of #{self}")
       end
 
@@ -177,7 +181,8 @@ module MB
           puts "#{@cw.length} existing neighbors on #{self}; looking for the right place for #{p}" # XXX
 
           # TODO: @first, and also this is O(edges per node)
-          ptr = @cw.keys.first
+          start = first
+          ptr = first
           ptr_next = nil
 
           # TODO: This loop can probably be simplified
@@ -190,7 +195,7 @@ module MB
               # p is to the right of self->ptr, so iterate clockwise to find surrounding neighbors
               ptr_next = @cw[ptr]
 
-              if p.cross(self, ptr_next) > 0
+              if ptr == ptr_next || ptr_next == start || p.cross(self, ptr_next) > 0
                 puts "It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" # XXX
                 @cw[p] = ptr_next
                 @cw[ptr] = p
@@ -206,7 +211,7 @@ module MB
 
               ptr_next = @ccw[ptr]
 
-              if p.cross(self. ptr_next) < 0
+              if ptr == ptr_next || ptr_next == start || p.cross(self, ptr_next) < 0
                 puts "It looks like #{p} goes between #{ptr_next} and #{ptr} on #{self}" # XXX
                 @ccw[p] = ptr_next
                 @ccw[ptr] = p
@@ -267,9 +272,24 @@ module MB
       p2.remove(p1)
     end
 
+    # Pass a sorted list of points.
     def triangulate(points)
-      if points.length <= 3
+      if points.length == 0
+        raise "No points were given to triangulate"
+      elsif points.length == 1
+        Hull.new(points)
+      elsif points.length == 2
+        Hull.new(points).tap { |h|
+          h.leftmost.add(h.rightmost)
+          h.rightmost.add(h.leftmost)
+        }
+      elsif points.length == 3
+        puts "Triangulating at bottom level with #{points} points" # XXX
+
         h = Hull.new(points)
+
+        p1 = h.leftmost
+        p2 = h.rightmost
         raise NotImplementedError, 'TODO: Trivial triangulation; return as a Hull'
       else
         n = points.length / 2
@@ -284,6 +304,8 @@ module MB
     #
     # Called MERGE in Lee and Schachter.
     def merge(left, right)
+      (l_l, l_r), (u_l, u_r) = left.tangents(right)
+
       raise NotImplementedError
     end
 
@@ -293,7 +315,7 @@ module MB
     # Analogous to QTEST(H, I, J, K) in Lee and Schachter.
     def outside?(p1, p2, p3, q)
       # TODO: memoize circumcircle and relative-angle computations?
-      x, y, r = circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+      x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
       d = Math.sqrt((q.x - x) ** 2 + (q.y - y) ** 2)
       d >= r
     end
