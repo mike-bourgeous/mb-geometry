@@ -33,6 +33,7 @@ RSpec.describe(MB::Delaunay) do
     let(:p9) { MB::Delaunay::Point.new(2, 2) }
     let(:p10) { MB::Delaunay::Point.new(0, 2) }
     let(:p11) { MB::Delaunay::Point.new(2, 1) }
+    let(:p12) { MB::Delaunay::Point.new(1, 2) }
 
     describe '#add' do
       it 'can add points around the origin in counterclockwise order' do
@@ -45,6 +46,7 @@ RSpec.describe(MB::Delaunay) do
         p1.add(p6)
         p1.add(p11)
         p1.add(p7)
+        p1.add(p12)
 
         expect(p1.counterclockwise(p2)).to eq(p4)
         expect(p1.counterclockwise(p4)).to eq(p3)
@@ -54,7 +56,8 @@ RSpec.describe(MB::Delaunay) do
         expect(p1.counterclockwise(p8)).to eq(p6)
         expect(p1.counterclockwise(p6)).to eq(p11)
         expect(p1.counterclockwise(p11)).to eq(p7)
-        expect(p1.counterclockwise(p7)).to eq(p2)
+        expect(p1.counterclockwise(p7)).to eq(p12)
+        expect(p1.counterclockwise(p12)).to eq(p2)
 
         expect(p1.clockwise(p4)).to eq(p2)
         expect(p1.clockwise(p3)).to eq(p4)
@@ -64,19 +67,20 @@ RSpec.describe(MB::Delaunay) do
         expect(p1.clockwise(p6)).to eq(p8)
         expect(p1.clockwise(p11)).to eq(p6)
         expect(p1.clockwise(p7)).to eq(p11)
-        expect(p1.clockwise(p2)).to eq(p7)
+        expect(p1.clockwise(p12)).to eq(p7)
+        expect(p1.clockwise(p2)).to eq(p12)
       end
 
       it 'raises an error when adding the same point' do
         expect { p2.add(MB::Delaunay::Point.new(p2.x, p2.y)) }.to raise_error(/identical/)
       end
 
-      it 'raises an error when adding a point collinear with another neighbor' do
+      it 'raises an error when adding a point collinear with another neighbor in the same direction' do
         p1.add(p7)
-        expect { p1.add(p9) }.to raise_error(/collinear/)
+        expect { p1.add(p9) }.to raise_error(/direction/)
 
         p1.add(p10)
-        expect { p1.add(p2) }.to raise_error(/collinear/)
+        expect { p1.add(p2) }.to raise_error(/direction/)
       end
     end
 

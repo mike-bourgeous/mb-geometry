@@ -178,18 +178,21 @@ module MB
           @cw[p] = p
           @ccw[p] = p
         else
-          puts "#{@cw.length} existing neighbors on #{self}; looking for the right place for #{p}" # XXX
+          puts "\e[1m#{@cw.length} existing neighbors on #{self}; looking for the right place for #{p}\e[0m" # XXX
 
           # TODO: @first, and also this is O(edges per node)
           start = first
           ptr = first
           ptr_next = nil
+          direction = nil
 
-          # TODO: This loop can probably be simplified
+          # TODO: This loop can probably be simplified; all the complication is
+          # in part to avoid just using an Array and sorting by atan2.
           loop do
             puts "Checking #{self}->#{ptr}" # XXX
             cross = p.cross(self, ptr)
             if cross < 0
+              direction ||= @cw
               puts "New point #{p} is right of #{self}->#{ptr}, moving clockwise" # XXX
 
               # p is to the right of self->ptr, so iterate clockwise to find surrounding neighbors
@@ -207,6 +210,7 @@ module MB
                 ptr_next = nil
               end
             elsif cross > 0
+              direction ||= @ccw
               puts "New point #{p} is left of #{self}->#{ptr}, moving counterclockwise" # XXX
 
               ptr_next = @ccw[ptr]
@@ -222,8 +226,28 @@ module MB
                 ptr = ptr_next
                 ptr_next = nil
               end
+            elsif Math.atan2(ptr.y - @y, ptr.x - @x).round(3) == Math.atan2(p.y - @y, p.x - @x).round(3)
+              # This would create a zero-area triangle between self->ptr->p
+              raise "New point #{p} is in the same direction from #{self} as existing neighbor #{ptr}"
             else
-              raise "New point #{p} is collinear with #{self} and existing neighbor #{ptr}"
+              direction ||= @ccw
+              puts "New point is collinear but on opposite side of existing neighbor #{ptr}; continuing in same direction"
+
+              ptr_next = direction[ptr]
+              next_cross = p.cross(self, ptr_next)
+              other_direction = direction == @cw ? @ccw : @cw
+
+              if ptr == ptr_next || ptr_next == start || (direction == @cw && next_cross > 0) || (direction == @ccw && next_cross < 0)
+                puts "It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" # XXX
+                direction[p] = ptr_next
+                direction[ptr] = p
+                other_direction[ptr_next] = p
+                other_direction[p] = ptr
+                break
+              else
+                ptr = ptr_next
+                ptr_next = nil
+              end
             end
           end
         end
