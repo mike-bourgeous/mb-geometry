@@ -15,8 +15,7 @@ RSpec.describe(MB::Delaunay) do
         right = MB::Delaunay::Hull.new([p3, p4])
 
         tangents = left.tangents(right)
-        puts tangents
-        raise
+        expect(tangents).to eq([[p1, p3], [p2, p4]])
       end
     end
   end

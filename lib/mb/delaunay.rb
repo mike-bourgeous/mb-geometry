@@ -36,6 +36,8 @@ module MB
         raise "Rightmost point on left-side hull #{self} is to the right of leftmost point on right-side hull #{right}" if x > y
         left = self
 
+        lower, upper = nil
+
         # Walk clockwise around left, counterclockwise around right, until the
         # next point on both sides is left of X->Y, showing that X->Y is the
         # lowest segment.
@@ -110,6 +112,10 @@ module MB
         end
       end
 
+      def to_s
+        "[#{@x}, #{@y}]{#{@cw.length}}"
+      end
+
       # Returns the 2D cross product between the two rays +o+->+p+ and
       # +o+->self.  If this value is 0, then +p+ and self are on the same line
       # through o.  If negative, then self is to the right of +o+->+p+.  If
@@ -136,7 +142,7 @@ module MB
       end
 
       # Returns the next clockwise neighbor to this point from point +p+.
-      # 
+      #
       # Called PRED(v_i, v_ij) in Lee and Schachter, where v_i is Ruby +self+,
       # and v_ij is +p+.  This uses a Hash, while the 1980 paper mentions a
       # circular doubly-linked list.
@@ -153,7 +159,8 @@ module MB
       end
 
       def first
-        raise NotImplementedError
+        # TODO: FIXME: This is wrong
+        @ccw.keys.first
       end
 
       # Adds point +p+ to the correct location in this point's adjacency lists.
@@ -169,7 +176,8 @@ module MB
         else
           puts "#{@cw.length} existing neighbors on #{self}; looking for the right place for #{p}" # XXX
 
-          ptr = @cw.keys.first # TODO: @first, and also this is O(edges per node)
+          # TODO: @first, and also this is O(edges per node)
+          ptr = @cw.keys.first
           ptr_next = nil
 
           # TODO: This loop can probably be simplified
@@ -334,7 +342,7 @@ module MB
         0.5 * (x2 * x2 - x1 * x1 + y2 * y2 - y1 * y1)
       ]
     end
-    
+
     # Temporarily copied here from my Geometry class in another project, to be
     # merged eventually.
     # Finds the line intersection, if any, between two lines given coordinates
