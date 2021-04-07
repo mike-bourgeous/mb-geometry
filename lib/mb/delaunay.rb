@@ -1,11 +1,16 @@
 require 'matrix'
+require 'forwardable'
 
 module MB
   # Pure Ruby Delaunay triangulation.
   class Delaunay
     class Hull
+      extend Forwardable
+
       # Analogous to LM(s) and RM(s) in Lee and Schachter.
       attr_reader :leftmost, :rightmost
+
+      def_delegators :@points, :count, :length, :size
 
       # +points+ *must* already be sorted by [x,y].
       def initialize(points)
@@ -32,21 +37,26 @@ module MB
       #
       # Called HULL in Lee and Schachter (extended to return both tangents).
       def tangents(right)
-        x = self.rightmost
-        y = right.leftmost
+        if self.rightmost > right.leftmost
+          raise "Rightmost point on left-side hull #{self} is to the right of leftmost point on right-side hull #{right}"
+        end
 
-        raise "Rightmost point on left-side hull #{self} is to the right of leftmost point on right-side hull #{right}" if x > y
+        raise "Cannot find tangents for empty hulls" if self.count == 0 || right.count == 0
+
         left = self
 
-        lower, upper = nil
+        max_count = left.count + right.count
 
         # Walk clockwise around left, counterclockwise around right, until the
         # next point on both sides is left of X->Y, showing that X->Y is the
         # lowest segment.
+        x = left.rightmost
+        y = right.leftmost
         z = y.first
         z1 = x.first
         z2 = x.clockwise(z1)
-        loop do
+        lower = nil
+        max_count.times do
           if z && z.right_of?(x, y)
             old_z = z
             z = z.counterclockwise(y)
@@ -61,6 +71,8 @@ module MB
           end
         end
 
+        raise "BUG: No lower tangent could be found" if lower.nil?
+
         # Walk counterclockwise around left, clockwise around right, until the
         # next point on both sides is to the right of X->Y, showing that X->Y is
         # the highest segment.
@@ -68,7 +80,8 @@ module MB
         y = right.leftmost
         z_r = y.clockwise(y.first)
         z_l = x.first
-        loop do
+        upper = nil
+        max_count.times do
           if z_r && z_r.left_of?(x, y)
             old_z = z_r
             z_r = z_r.clockwise(y)
@@ -82,6 +95,8 @@ module MB
             break
           end
         end
+
+        raise "BUG: No upper tangent could be found" if upper.nil?
 
         return lower, upper
       end
