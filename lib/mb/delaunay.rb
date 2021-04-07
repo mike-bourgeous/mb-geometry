@@ -543,6 +543,7 @@ module MB
       r = l_r
 
       # XXX
+      # TODO a name stack would be better, so U_R can become R2 and go back to U_R
       l_l.name = 'L'
       l_r.name = 'R'
       u_l.name = 'U_L'
@@ -562,11 +563,17 @@ module MB
 
         join(l, r, l == l_l && r == l_r)
 
+        # FIXME: r.clockwise(r1) is returning a newly joined lower-tangent neighbor for bad_bench_minimized.json
+
         r1 = r.clockwise(l)
+        r1.name = 'R1'
         if r1.left_of?(l, r)
           r2&.name = nil
           r2 = r.clockwise(r1)
           r2.name = 'R2'
+
+          save_json # XXX
+
           until outside?(r1, l, r, r2)
             unjoin(r, r1)
 
@@ -578,6 +585,8 @@ module MB
 
             r2 = r.clockwise(r1)
             r2.name = 'R2'
+
+            save_json
           end
         else
           a = true
@@ -590,6 +599,9 @@ module MB
           l2&.name = nil
           l2 = l.counterclockwise(l1)
           l2.name = 'L2'
+
+          save_json # XXX
+
           until outside?(l, r, l1, l2)
             unjoin(l, l1)
 
@@ -601,6 +613,8 @@ module MB
 
             l2 = l.counterclockwise(l1)
             l2.name = 'L2'
+
+            save_json
           end
         else
           b = true
@@ -637,7 +651,7 @@ module MB
         p.name = nil
       end
 
-      left.add_hull(right)
+      left.add_hull(right).tap { save_json }
     end
 
     # Returns true if the query point +q+ is not inside the circumcircle
