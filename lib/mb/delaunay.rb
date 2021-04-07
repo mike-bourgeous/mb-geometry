@@ -414,7 +414,7 @@ module MB
           x: p.x, y: p.y,
           color: c,
           name: p.name,
-          neighbors: p.neighbors.map { |n| { x: n.x, y: n.y } }
+          neighbors: p.neighbors.map { |n| { x: n.x, y: n.y, color: n == p.first ? [0.9, 0.1, 0.1, 0.9] : nil } }
         }
       }
     end
