@@ -23,7 +23,7 @@ t = nil
 
 begin
   elapsed = Benchmark.realtime do
-    10.times do
+    100.times do
       t = MB::Delaunay.new(points)
     end
   end
