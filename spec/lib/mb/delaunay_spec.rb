@@ -138,7 +138,7 @@ RSpec.describe(MB::Delaunay) do
         expect(tangents).to eq([[p1, p3], [p2, p4]])
       end
 
-      it 'returns the correct tangents for two titled line segments' do
+      it 'returns the correct tangents for two tilted line segments' do
         p1 = MB::Delaunay::Point.new(-1, 0)
         p2 = MB::Delaunay::Point.new(-0.9, 1)
         p1.add(p2)
@@ -164,6 +164,60 @@ RSpec.describe(MB::Delaunay) do
 
         tangents = left.tangents(right)
         expect(tangents).to eq([[p1, p2], [p1, p2]])
+      end
+
+      it 'returns the correct tangents for two side-by-side upright triangles' do
+        p1 = MB::Delaunay::Point.new(-3, -1)
+        p2 = MB::Delaunay::Point.new(-1, -1)
+        p3 = MB::Delaunay::Point.new(-2, 1)
+        p1.add(p2)
+        p2.add(p3)
+        p3.add(p1)
+        p1.add(p3)
+        p3.add(p2)
+        p2.add(p1)
+        left = MB::Delaunay::Hull.new([p1, p3, p2])
+
+        p4 = MB::Delaunay::Point.new(1, -1)
+        p5 = MB::Delaunay::Point.new(3, -1)
+        p6 = MB::Delaunay::Point.new(2, 1)
+        p4.add(p5)
+        p5.add(p6)
+        p6.add(p4)
+        p4.add(p6)
+        p6.add(p5)
+        p5.add(p4)
+        right = MB::Delaunay::Hull.new([p4, p6, p5])
+
+        tangents = left.tangents(right)
+        expect(tangents).to eq([[p2, p4], [p3, p6]])
+      end
+
+      it 'returns the correct tangents for two side-by-side triangles of opposite orientation' do
+        p1 = MB::Delaunay::Point.new(-3, 1)
+        p2 = MB::Delaunay::Point.new(-1, 1)
+        p3 = MB::Delaunay::Point.new(-2, -1)
+        p1.add(p3)
+        p3.add(p2)
+        p2.add(p1)
+        p3.add(p1)
+        p2.add(p3)
+        p1.add(p2)
+        left = MB::Delaunay::Hull.new([p1, p3, p2])
+
+        p4 = MB::Delaunay::Point.new(1, -1)
+        p5 = MB::Delaunay::Point.new(3, -1)
+        p6 = MB::Delaunay::Point.new(2, 1)
+        p4.add(p5)
+        p5.add(p6)
+        p6.add(p4)
+        p4.add(p6)
+        p6.add(p5)
+        p5.add(p4)
+        right = MB::Delaunay::Hull.new([p4, p6, p5])
+
+        tangents = left.tangents(right)
+        expect(tangents).to eq([[p3, p4], [p2, p6]])
       end
     end
   end
