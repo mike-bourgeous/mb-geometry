@@ -44,4 +44,4 @@ puts Pry::ColorPrinter.pp(
   80
 )
 
-puts "\n\e[1m#{elapsed}\e[0m seconds\n\n"
+puts "\n\e[1m#{elapsed}\e[0m seconds for \e[1m#{points.length}\e[0m points\n\n"
