@@ -360,11 +360,22 @@ module MB
 
     attr_reader :points
 
+    # Initializes a triangulation of the given Array of +points+ of the
+    # following form: [ [x1, y1], [x2, y2], ... ].
+    #
+    # Use #points to retrieve an Array of MB::Delaunay::Point objects and the
+    # MB::Delaunay::Point#neighbors method to access the neighbor graph after
+    # construction.
     def initialize(points)
       @points = points.map { |x, y| Point.new(x, y) }
       @points.sort! # Point implements <=> to sort by X and break ties by Y
       triangulate(@points)
     end
+
+    # TODO: methods for adding and removing individual points, using a fast
+    # algorithm for single-point insertion
+
+    # TODO: methods for retrieving a set of triangles, not just points/edges
 
     private
 
