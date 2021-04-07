@@ -375,4 +375,53 @@ RSpec.describe(MB::Delaunay) do
       end
     end
   end
+
+  let (:trivial) {
+    MB::Delaunay.new([
+      [-1, -1],
+      [1, -1],
+      [0, 1]
+    ])
+  }
+
+  describe '#points' do
+    it 'returns points in sorted order' do
+      expect(trivial.points).to eq([
+        MB::Delaunay::Point.new(-1, -1),
+        MB::Delaunay::Point.new(0, 1),
+        MB::Delaunay::Point.new(1, -1),
+      ])
+    end
+  end
+
+  describe '#triangulate' do
+    it 'produces a valid triangulation for three trivial input points' do
+      t = MB::Delaunay.new([
+        [-1, -1],
+        [1, -1],
+        [0, 1]
+      ])
+
+      expect(t.points).to eq([
+        MB::Delaunay::Point.new(-1, -1),
+        MB::Delaunay::Point.new(0, 1),
+        MB::Delaunay::Point.new(1, -1),
+      ])
+
+      expect(t.points[0].first).to eq(t.points[2])
+      expect(t.points[2].first).to eq(t.points[1])
+      expect(t.points[1].first).to eq(t.points[0])
+    end
+  end
+
+  pending 'difficult/pathological cases'
+  pending 'a horizontal line'
+  pending 'a vertical line'
+  pending 'alternating sequences of N horizontal and vertical groups'
+  pending 'sequences of spaced horizontal groups'
+  pending 'sequences of spaced vertical groups'
+  pending 'regular polygons (circular)'
+  pending 'symmetric reflections'
+  pending 'regular polygons with a single central point'
+  pending 'nested polygons'
 end

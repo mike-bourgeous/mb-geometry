@@ -351,6 +351,8 @@ module MB
       end
     end
 
+    attr_reader :points
+
     def initialize(points)
       @points = points.map { |x, y| Point.new(x, y) }
       @points.sort! # Point implements <=> to sort by X and break ties by Y
