@@ -350,24 +350,57 @@ module MB
 
     # Pass a sorted list of points.
     def triangulate(points)
-      if points.length == 0
+      case points.length
+      when 0
         raise "No points were given to triangulate"
-      elsif points.length == 1
-        Hull.new(points)
-      elsif points.length == 2
-        Hull.new(points).tap { |h|
-          h.leftmost.add(h.rightmost)
-          h.rightmost.add(h.leftmost)
-        }
-      elsif points.length == 3
-        puts "Triangulating at bottom level with #{points} points" # XXX
 
+      when 1
+        Hull.new(points)
+
+      when 2
+        points[0].add(points[1])
+        points[1].add(points[0])
+        Hull.new(points)
+
+      when 3
         h = Hull.new(points)
 
-        p1 = h.leftmost
-        p2 = h.rightmost
-        raise NotImplementedError, 'TODO: Trivial triangulation; return as a Hull'
+        # Because points are known to be sorted, p1 is leftmost and p3 is rightmost
+        p1, p2, p3 = points
+
+        # Connect points to each other in counterclockwise order
+        cross = p2.cross(p1, p3)
+        if cross < 0
+          # p2 is right of p1->p3; put p2 on the bottom
+          p1.add(p2)
+          p2.add(p3)
+          p3.add(p1)
+
+          p3.add(p2)
+          p2.add(p1)
+          p1.add(p3)
+        elsif cross > 0
+          # p2 is left of p1->p3; put p2 on the top
+          p1.add(p3)
+          p3.add(p2)
+          p2.add(p1)
+
+          p1.add(p2)
+          p2.add(p3)
+          p3.add(p1)
+        else
+          # p2 is on a line between p1 and p3; link left-to-right
+          p1.add(p2)
+          p2.add(p3)
+
+          p3.add(p2)
+          p2.add(p1)
+        end
+
+        h
+
       else
+        # 4 or more points; divide and conquer
         n = points.length / 2
         left = points[0...n]
         right = points[n..-1]
