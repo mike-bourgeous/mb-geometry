@@ -123,6 +123,10 @@ module MB
         "[#{@x}, #{@y}]{#{@cw.length}}"
       end
 
+      def inspect
+        "#<MB::Delaunay::Point:#{__id__} #{to_s}"
+      end
+
       # Returns an angle from self to +p+ from 0 to 2PI starting at the
       # positive X axis.
       def angle(p)
