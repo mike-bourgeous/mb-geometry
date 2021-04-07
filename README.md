@@ -26,6 +26,4 @@ Guibas and Stolfi, which the ACM still charges for and thus I have not read.
 
 ## Testing
 
-- rspec --seed 36237 # @cw and @ccw have differing lengths
-- rspec --seed 25945
-- rspec --seed 12558 # differing lengths
+- `bin/delaunay_bench.rb` crashes at 13 but works at 12 points

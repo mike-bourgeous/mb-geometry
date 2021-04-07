@@ -477,8 +477,10 @@ module MB
       r = l_r
 
       until l == u_l && r == u_r
+        # TODO: Name these better than just A and B (the original paper's names)
         a = false
         b = false
+
         join(l, r, l == l_l && r == l_r)
 
         r1 = r.clockwise(l)
