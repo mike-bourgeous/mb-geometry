@@ -437,7 +437,7 @@ RSpec.describe(MB::Delaunay) do
         [1, 1]   => [[-1, -1], [0.5, 0], [1, -1]]
       }
 
-      actual = trivial4.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h
+      actual = trivial4.points.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h
 
       expect(actual).to eq(expected)
     end
