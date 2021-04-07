@@ -263,7 +263,7 @@ RSpec.describe(MB::Delaunay) do
           points = instance_exec(&pts)
 
           points.each_with_index do |p, idx|
-            puts "\e[32mAdding point #{p}, index #{idx}\e[0m"
+            loglog "\e[32mAdding point #{p}, index #{idx}\e[0m" # XXX
             p1.add(p)
           end
 
@@ -376,7 +376,7 @@ RSpec.describe(MB::Delaunay) do
     end
   end
 
-  let (:trivial) {
+  let (:trivial3) {
     MB::Delaunay.new([
       [-1, -1],
       [1, -1],
@@ -384,33 +384,60 @@ RSpec.describe(MB::Delaunay) do
     ])
   }
 
+  let (:trivial4) {
+    MB::Delaunay.new([
+      [-1, -1],
+      [1, -1],
+      [0.5, 0],
+      [1, 1]
+    ])
+  }
+
   describe '#points' do
     it 'returns points in sorted order' do
-      expect(trivial.points).to eq([
+      expect(trivial3.points).to eq([
         MB::Delaunay::Point.new(-1, -1),
         MB::Delaunay::Point.new(0, 1),
         MB::Delaunay::Point.new(1, -1),
+      ])
+
+      expect(trivial4.points).to eq([
+        MB::Delaunay::Point.new(-1, -1),
+        MB::Delaunay::Point.new(0.5, 0),
+        MB::Delaunay::Point.new(1, -1),
+        MB::Delaunay::Point.new(1, 1),
       ])
     end
   end
 
   describe '#triangulate' do
     it 'produces a valid triangulation for three trivial input points' do
-      t = MB::Delaunay.new([
-        [-1, -1],
-        [1, -1],
-        [0, 1]
-      ])
+      expect(trivial3.points[0].first).to eq(trivial3.points[2])
+      expect(trivial3.points[2].first).to eq(trivial3.points[1])
+      expect(trivial3.points[1].first).to eq(trivial3.points[0])
 
-      expect(t.points).to eq([
-        MB::Delaunay::Point.new(-1, -1),
-        MB::Delaunay::Point.new(0, 1),
-        MB::Delaunay::Point.new(1, -1),
+      expect(trivial3.points[0].neighbors.sort).to eq([
+        trivial3.points[1], trivial3.points[2]
       ])
+      expect(trivial3.points[1].neighbors.sort).to eq([
+        trivial3.points[0], trivial3.points[2]
+      ])
+      expect(trivial3.points[2].neighbors.sort).to eq([
+        trivial3.points[0], trivial3.points[1]
+      ])
+    end
 
-      expect(t.points[0].first).to eq(t.points[2])
-      expect(t.points[2].first).to eq(t.points[1])
-      expect(t.points[1].first).to eq(t.points[0])
+    it 'produces a valid triangulation for four trivial input points' do
+      expected = {
+        [-1, -1] => [[0.5, 0], [1, -1],  [1, 1]],
+        [0.5, 0] => [[-1, -1], [1, -1],  [1, 1]],
+        [1, -1]  => [[-1, -1], [0.5, 0], [1, 1]],
+        [1, 1]   => [[1, -1],  [0.5, 0], [-1, -1]]
+      }
+
+      actual = trivial4.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h
+
+      expect(actual).to eq(expected)
     end
   end
 
