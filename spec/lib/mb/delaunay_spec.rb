@@ -61,13 +61,19 @@ RSpec.describe(MB::Delaunay) do
         it "can add points around the origin in #{name.to_s.gsub('_', ' ')} order" do
           points = instance_exec(&pts)
 
-          points.each do |p|
+          points.each_with_index do |p, idx|
+            puts "\e[32mAdding point #{p}, index #{idx}\e[0m"
             p1.add(p)
           end
 
           ccw.each_with_index do |p, idx|
             p2 = ccw[(idx + 1) % ccw.length]
-            expect(p1.counterclockwise(p)).to eq(p2)
+            begin
+              expect(p1.counterclockwise(p)).to eq(p2)
+            rescue Exception => e # XXX
+              require 'pry-byebug'; binding.pry
+              raise
+            end
           end
 
           # TODO: Verify #first behaves correctly for convex hull navigation

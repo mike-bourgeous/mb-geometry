@@ -22,3 +22,10 @@ Guibas and Stolfi, which the ACM still charges for and thus I have not read.
 - [Lee and Schachter, 1980](http://www.personal.psu.edu/cxc11/AERSP560/DELAUNEY/13_Two_algorithms_Delauney.pdf)
 - [Computing constrained Delaunay triangulations](https://web.archive.org/web/20170922181219/http://www.geom.uiuc.edu/~samuelp/del_project.html)
 - https://en.wikipedia.org/wiki/Delaunay_triangulation
+
+
+## Testing
+
+- rspec --seed 36237 # @cw and @ccw have differing lengths
+- rspec --seed 25945
+- rspec --seed 12558 # differing lengths

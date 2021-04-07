@@ -188,8 +188,12 @@ module MB
 
           # TODO: This loop can probably be simplified; all the complication is
           # in part to avoid just using an Array and sorting by atan2.
+          #
+          # FIXME: this does the wrong thing if the new point is on the
+          # opposite side of self from existing neighbors; maybe need to use
+          # atan2
           loop do
-            puts "Checking #{self}->#{ptr}" # XXX
+            puts "Checking #{self}->#{ptr} while direction is #{direction.equal?(@cw) ? 'clockwise' : (direction.equal?(@ccw) ? 'counterclockwise' : 'unknown')}" # XXX
             cross = p.cross(self, ptr)
             if cross < 0
               direction ||= @cw
@@ -230,12 +234,12 @@ module MB
               # This would create a zero-area triangle between self->ptr->p
               raise "New point #{p} is in the same direction from #{self} as existing neighbor #{ptr}"
             else
+              puts "New point is collinear but on opposite side of existing neighbor #{ptr}; continuing in #{direction.equal?(@cw) ? 'clockwise' : (direction.equal?(@ccw) ? 'counterclockwise' : 'unknown')} direction"
               direction ||= @ccw
-              puts "New point is collinear but on opposite side of existing neighbor #{ptr}; continuing in same direction"
 
               ptr_next = direction[ptr]
               next_cross = p.cross(self, ptr_next)
-              other_direction = direction == @cw ? @ccw : @cw
+              other_direction = direction.equal?(@cw) ? @ccw : @cw
 
               if ptr == ptr_next || ptr_next == start || (direction == @cw && next_cross > 0) || (direction == @ccw && next_cross < 0)
                 puts "It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" # XXX
@@ -250,6 +254,12 @@ module MB
               end
             end
           end
+        end
+
+        if @cw.length != @ccw.length
+          puts "\e[1;31m@cw has length #{@cw.length} @ccw has length #{@ccw.length}\e[0m"
+          require 'pry'
+          puts Pry::ColorPrinter.pp({cw: @cw, ccw: @ccw}, '', 80)
         end
       end
 
