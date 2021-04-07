@@ -428,11 +428,13 @@ RSpec.describe(MB::Delaunay) do
     end
 
     it 'produces a valid triangulation for four trivial input points' do
+      # Expected values from fft_experiment's Geometry::Voronoi class
+      # v.cells.sort_by(&:point).map { |c| [ c.point, c.neighbors.map(&:point).sort ] }.to_h
       expected = {
         [-1, -1] => [[0.5, 0], [1, -1],  [1, 1]],
         [0.5, 0] => [[-1, -1], [1, -1],  [1, 1]],
         [1, -1]  => [[-1, -1], [0.5, 0], [1, 1]],
-        [1, 1]   => [[1, -1],  [0.5, 0], [-1, -1]]
+        [1, 1]   => [[-1, -1], [0.5, 0], [1, -1]]
       }
 
       actual = trivial4.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h

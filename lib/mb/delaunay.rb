@@ -503,6 +503,11 @@ module MB
         end
       end
 
+      # Add the top tangent; this seems to be omitted from Lee and Schachter,
+      # either that or the "UNTIL" loop behaves differently in their pseudocode
+      # and runs one final iteration.
+      join(u_r, u_l, true)
+
       left.add_hull(right)
     end
 
