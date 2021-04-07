@@ -100,6 +100,8 @@ module MB
 
         @cw = {}
         @ccw = {}
+        @neighbors = []
+        @first = nil
       end
 
       # Compares points by X, using Y to break ties.
@@ -119,6 +121,14 @@ module MB
 
       def to_s
         "[#{@x}, #{@y}]{#{@cw.length}}"
+      end
+
+      # Returns an angle from self to +p+ from 0 to 2PI starting at the
+      # positive X axis.
+      def angle(p)
+        a = Math.atan2(p.y - self.y, p.x - self.x)
+        a += 2.0 * Math::PI if a < 0
+        a
       end
 
       # Returns the 2D cross product between the two rays +o+->+p+ and
@@ -146,13 +156,30 @@ module MB
         cross(p1, p2) > 0
       end
 
+      # XXX
+      def neighbors_clockwise
+        return @cw.keys if @cw.length == 1
+
+        start = @cw.keys.first
+        ptr = @cw[start]
+        arr = [start]
+
+        while ptr != start
+          arr << ptr
+          ptr = @cw[ptr]
+        end
+
+        arr
+      end
+
       # Returns the next clockwise neighbor to this point from point +p+.
       #
       # Called PRED(v_i, v_ij) in Lee and Schachter, where v_i is Ruby +self+,
       # and v_ij is +p+.  This uses a Hash, while the 1980 paper mentions a
       # circular doubly-linked list.
       def clockwise(p)
-        @cw[p] || (raise "Point #{p} is not a neighbor of #{self}")
+        # XXX @cw[p] || (raise "Point #{p} is not a neighbor of #{self}")
+        @neighbors[@neighbors.index(p) - 1] # XXX FIXME hack to get this working
       end
 
       # Returns the next counterclockwise neighbor to this point from point
@@ -160,12 +187,15 @@ module MB
       #
       # Called SUCC in Lee and Schachter.
       def counterclockwise(p)
-        @ccw[p] || (raise "Point #{p} is not a neighbor of #{self}")
+        # XXX @ccw[p] || (raise "Point #{p} is not a neighbor of #{self}")
+        @neighbors[(@neighbors.index(p) + 1) % @neighbors.length] # XXX FIXME: hack to provide invariants
       end
 
       def first
         # TODO: FIXME: This is wrong
-        @ccw.keys.first
+        # XXX @ccw.keys.first
+        # XXX @neighbors.first
+        @first
       end
 
       # Adds point +p+ to the correct location in this point's adjacency lists.
@@ -173,6 +203,11 @@ module MB
         raise "Cannot add identical point #{p} as a neighbor of #{self}" if p == self
         raise "Point #{p} is already a neighbor of #{self}" if @cw.include?(p) && @ccw.include?(p)
         raise "BUG: @cw and @ccw have differing lengths" if @cw.length != @ccw.length
+
+        # XXX hack to get the invariants working slowly; remove this later
+        @first ||= p
+        @neighbors << p
+        @neighbors.sort_by! { |p| self.angle(p) } # FIXME: this doesn't catch a neighbor in the same direction as another
 
         if @cw.empty?
           puts "No existing neighbors on #{self}; #{p} is its own adjacent neighbor" # XXX
@@ -268,6 +303,8 @@ module MB
       def remove(p)
         raise "BUG: Point #{p} is in only one of @cw and @ccw" if @cw.include?(p) != @ccw.include?(p)
         raise "Point #{p} is not a neighbor of #{self}" unless @cw.include?(p) && @ccw.include?(p)
+
+        @neighbors.delete(p)
 
         next_cw = @cw[p]
         next_ccw = @ccw[p]
