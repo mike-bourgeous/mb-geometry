@@ -1,6 +1,58 @@
 RSpec.describe(MB::Delaunay) do
   describe(MB::Delaunay::Hull) do
     describe '#tangents' do
+      it 'returns the correct single tangent for two vertical segments with shared X' do
+        # Y is in ascending order, matching sort by [x, y]
+        p1 = MB::Delaunay::Point.new(-1, -2)
+        p2 = MB::Delaunay::Point.new(-1, -1)
+        p1.add(p2)
+        p2.add(p1)
+        left = MB::Delaunay::Hull.new([p1, p2])
+
+        p3 = MB::Delaunay::Point.new(-1, 1)
+        p4 = MB::Delaunay::Point.new(-1, 2)
+        p3.add(p4)
+        p4.add(p3)
+        right = MB::Delaunay::Hull.new([p3, p4])
+
+        tangents = left.tangents(right)
+        expect(tangents).to eq([[p2, p3], [p2, p3]])
+      end
+
+      it 'returns the correct tangents for two horizontal segments with one shared X' do
+        p1 = MB::Delaunay::Point.new(-2, -1)
+        p2 = MB::Delaunay::Point.new(0, -1)
+        p1.add(p2)
+        p2.add(p1)
+        left = MB::Delaunay::Hull.new([p1, p2])
+
+        p3 = MB::Delaunay::Point.new(0, 0)
+        p4 = MB::Delaunay::Point.new(2, 0)
+        p3.add(p4)
+        p4.add(p3)
+        right = MB::Delaunay::Hull.new([p3, p4])
+
+        tangents = left.tangents(right)
+        expect(tangents).to eq([[p2, p4], [p1, p3]])
+      end
+
+      it 'returns the correct tangents for two offset horizontal segments' do
+        p1 = MB::Delaunay::Point.new(-2, -1)
+        p2 = MB::Delaunay::Point.new(-1, -1)
+        p1.add(p2)
+        p2.add(p1)
+        left = MB::Delaunay::Hull.new([p1, p2])
+
+        p3 = MB::Delaunay::Point.new(1, 0)
+        p4 = MB::Delaunay::Point.new(2, 0)
+        p3.add(p4)
+        p4.add(p3)
+        right = MB::Delaunay::Hull.new([p3, p4])
+
+        tangents = left.tangents(right)
+        expect(tangents).to eq([[p2, p4], [p1, p3]])
+      end
+
       it 'returns the correct single tangent for two horizontal segments at the same Y' do
         p1 = MB::Delaunay::Point.new(-2, 0)
         p2 = MB::Delaunay::Point.new(-1, 0)
@@ -16,6 +68,23 @@ RSpec.describe(MB::Delaunay) do
 
         tangents = left.tangents(right)
         expect(tangents).to eq([[p2, p3], [p2, p3]])
+      end
+
+      it 'returns the correct tangents for a horizontal segment above a vertical segment' do
+        p1 = MB::Delaunay::Point.new(-2, 3)
+        p2 = MB::Delaunay::Point.new(-1, 3)
+        p1.add(p2)
+        p2.add(p1)
+        left = MB::Delaunay::Hull.new([p1, p2])
+
+        p3 = MB::Delaunay::Point.new(1, -1)
+        p4 = MB::Delaunay::Point.new(1, 1)
+        p3.add(p4)
+        p4.add(p3)
+        right = MB::Delaunay::Hull.new([p3, p4])
+
+        tangents = left.tangents(right)
+        expect(tangents).to eq([[p1, p3], [p2, p4]])
       end
 
       it 'returns the correct tangents for a horizontal segment below a vertical segment' do
@@ -84,6 +153,17 @@ RSpec.describe(MB::Delaunay) do
 
         tangents = left.tangents(right)
         expect(tangents).to eq([[p1, p3], [p2, p4]])
+      end
+
+      it 'returns the correct tangents for two single points' do
+        p1 = MB::Delaunay::Point.new(-2, -1)
+        left = MB::Delaunay::Hull.new([p1])
+
+        p2 = MB::Delaunay::Point.new(2, 1)
+        right = MB::Delaunay::Hull.new([p2])
+
+        tangents = left.tangents(right)
+        expect(tangents).to eq([[p1, p2], [p1, p2]])
       end
     end
   end

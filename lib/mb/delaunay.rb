@@ -47,11 +47,11 @@ module MB
         z1 = x.first
         z2 = x.clockwise(z1)
         loop do
-          if z.right_of?(x, y)
+          if z && z.right_of?(x, y)
             old_z = z
             z = z.counterclockwise(y)
             y = old_z
-          elsif z2.right_of?(x, y)
+          elsif z2 && z2.right_of?(x, y)
             old_z2 = z2
             z2 = z2.clockwise(x)
             x = old_z2
@@ -69,11 +69,11 @@ module MB
         z_r = y.clockwise(y.first)
         z_l = x.first
         loop do
-          if z_r.left_of?(x, y)
+          if z_r && z_r.left_of?(x, y)
             old_z = z_r
             z_r = z_r.clockwise(y)
             y = old_z
-          elsif z_l.left_of?(x, y)
+          elsif z_l && z_l.left_of?(x, y)
             old_z = z_l
             z_l = z_l.counterclockwise(x)
             x = old_z
@@ -182,6 +182,7 @@ module MB
       # and v_ij is +p+.  This uses a Hash, while the 1980 paper mentions a
       # circular doubly-linked list.
       def clockwise(p)
+        return nil if p.nil?
         # XXX @cw[p] || (raise "Point #{p} is not a neighbor of #{self}")
         @neighbors[@neighbors.index(p) - 1] # XXX FIXME hack to get this working
       end
@@ -191,6 +192,7 @@ module MB
       #
       # Called SUCC in Lee and Schachter.
       def counterclockwise(p)
+        return nil if p.nil?
         # XXX @ccw[p] || (raise "Point #{p} is not a neighbor of #{self}")
         @neighbors[(@neighbors.index(p) + 1) % @neighbors.length] # XXX FIXME: hack to provide invariants
       end
