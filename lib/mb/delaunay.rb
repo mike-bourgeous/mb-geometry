@@ -23,7 +23,8 @@ module MB
       def add_hull(h)
         @leftmost = h.leftmost if @leftmost.nil? || h.leftmost < @leftmost
         @rightmost = h.rightmost if @rightmost.nil? || h.rightmost > @rightmost
-        raise NotImplementedError
+        points.concat(h.points)
+        points.sort! # TODO: If +h+ is always right of self, then this sort is unnecessary
       end
 
       # Returns the upper and lower tangents linking this left-side hull to the
