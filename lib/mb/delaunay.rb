@@ -15,15 +15,21 @@ module MB
       extend Forwardable
 
       # Analogous to LM(s) and RM(s) in Lee and Schachter.
-      attr_reader :leftmost, :rightmost, :points
+      attr_reader :leftmost, :rightmost, :points, :hull_id
 
       def_delegators :@points, :count, :length, :size
 
       # +points+ *must* already be sorted by [x,y].
       def initialize(points)
+        @@hull_id ||= 0
+        @hull_id = @@hull_id
+        @@hull_id += 1
+
         @points = points.dup
         @leftmost = points.first
         @rightmost = points.last
+
+        points.each do |p| p.hull = self end
       end
 
       def add_hull(h)
@@ -31,6 +37,9 @@ module MB
         @rightmost = h.rightmost if @rightmost.nil? || h.rightmost > @rightmost
         points.concat(h.points)
         points.sort! # TODO: If +h+ is always right of self, then this sort is unnecessary
+
+        h.points.each do |p| p.hull = self end
+
         self
       end
 
@@ -111,6 +120,8 @@ module MB
 
       attr_reader :x, :y
 
+      attr_accessor :hull, :name
+
       def initialize(x, y)
         @x = x
         @y = y
@@ -119,6 +130,8 @@ module MB
         @ccw = {}
         @neighbors = []
         @first = nil
+        @hull = nil
+        @name = nil
       end
 
       # Compares points by X, using Y to break ties.
@@ -382,6 +395,44 @@ module MB
 
     # TODO: methods for retrieving a set of triangles, not just points/edges
 
+    def to_a
+      @points.map { |p|
+        if p.hull.nil?
+          c = nil
+        else
+          id = (p.hull.hash ^ p.hull.hull_id) % 64 # XXX p.hull.hull_id % 64
+
+          r = (id % 4) / 6.0 + 0.25
+          g = ((id / 4) % 4) / 6.0 + 0.25
+          b = (id / 16) / 6.0 + 0.25
+          a = 0.8
+
+          c = [r, g, b, a]
+        end
+
+        {
+          x: p.x, y: p.y,
+          color: c,
+          name: p.name,
+          neighbors: p.neighbors.map { |n| { x: n.x, y: n.y } }
+        }
+      }
+    end
+
+    def save_json
+      require 'json'
+      @json_idx ||= 0
+
+      @last_json ||= to_a
+      this_json = to_a
+      if @last_json != this_json
+        loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
+        File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(to_a))
+        @json_idx += 1
+        @last_json = this_json
+      end
+    end
+
     private
 
     # Creates an edge between two points.
@@ -391,6 +442,8 @@ module MB
       loglog { "\e[32mConnecting \e[1m#{p1}\e[22m to \e[1m#{p2}\e[0m" }
       p1.add(p2, set_first)
       p2.add(p1)
+
+      save_json # XXX
     end
 
     # Analogous to DELETE(A, B) from Lee and Schachter.
@@ -398,11 +451,15 @@ module MB
       loglog { "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[0m" }
       p1.remove(p2)
       p2.remove(p1)
+
+      save_json # XXX
     end
 
     # Pass a sorted list of points.
     def triangulate(points)
       loglog { "\e[34mTriangulating \e[1m#{points.length}\e[22m points\e[0m" }
+
+      save_json # XXX
 
       case points.length
       when 0
@@ -425,6 +482,7 @@ module MB
         # Connect points to each other in counterclockwise order
         cross = p2.cross(p1, p3)
         if cross < 0
+          loglog { " p1 -> p2 -> p3" }
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
           p2.add(p3)
@@ -434,6 +492,7 @@ module MB
           p2.add(p1)
           p1.add(p3)
         elsif cross > 0
+          loglog { " p1 -> p3 -> p2" }
           # p2 is left of p1->p3; put p2 on the top
           p1.add(p3)
           p3.add(p2)
@@ -444,6 +503,7 @@ module MB
           p3.add(p1)
         else
           # p2 is on a line between p1 and p3; link left-to-right
+          loglog { " p1 -> p2 ; p2 -> p3" }
           p1.add(p2)
           p2.add(p3)
 
@@ -463,6 +523,9 @@ module MB
 
         merge(triangulate(left), triangulate(right))
       end
+
+    ensure
+      save_json # XXX
     end
 
     # Merges two convex hulls that contain locally complete Delaunay
@@ -479,6 +542,19 @@ module MB
       l = l_l
       r = l_r
 
+      # XXX
+      l_l.name = 'L'
+      l_r.name = 'R'
+      u_l.name = 'U_L'
+      u_r.name = 'U_R'
+
+      save_json # XXX
+
+      l1 = nil
+      r1 = nil
+      l2 = nil
+      r2 = nil
+
       until l == u_l && r == u_r
         # TODO: Name these better than just A and B (the original paper's names)
         a = false
@@ -488,27 +564,50 @@ module MB
 
         r1 = r.clockwise(l)
         if r1.left_of?(l, r)
+          r2&.name = nil
           r2 = r.clockwise(r1)
+          r2.name = 'R2'
           until outside?(r1, l, r, r2)
             unjoin(r, r1)
+
+            r1&.name = nil
+            r2&.name = nil
+
             r1 = r2
+            r1.name = 'R1'
+
             r2 = r.clockwise(r1)
+            r2.name = 'R2'
           end
         else
           a = true
         end
 
+        l1&.name = nil
         l1 = l.counterclockwise(r)
+        l1.name = 'L1'
         if l1.right_of?(r, l)
+          l2&.name = nil
           l2 = l.counterclockwise(l1)
+          l2.name = 'L2'
           until outside?(l, r, l1, l2)
             unjoin(l, l1)
+
+            l1&.name = nil
+            l2&.name = nil
+
             l1 = l2
+            l1.name = 'L1'
+
             l2 = l.counterclockwise(l1)
+            l2.name = 'L2'
           end
         else
           b = true
         end
+
+        l&.name = nil
+        r&.name = nil
 
         if a
           l = l1
@@ -519,12 +618,24 @@ module MB
         else
           l = l1
         end
+
+        l.name = 'L'
+        r.name = 'R'
+
+        save_json # XXX
       end
 
       # Add the top tangent; this seems to be omitted from Lee and Schachter,
       # either that or the "UNTIL" loop behaves differently in their pseudocode
       # and runs one final iteration.
       join(u_r, u_l, true)
+
+      left.points.each do |p|
+        p.name = nil
+      end
+      right.points.each do |p|
+        p.name = nil
+      end
 
       left.add_hull(right)
     end
@@ -536,6 +647,9 @@ module MB
     def outside?(p1, p2, p3, q)
       # TODO: memoize circumcircle and relative-angle computations?
       x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+
+      binding.pry if x.nil? || y.nil? || r.nil? || q.nil? # XXX
+
       d = Math.sqrt((q.x - x) ** 2 + (q.y - y) ** 2)
       d >= r
     end
