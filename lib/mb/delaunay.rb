@@ -30,6 +30,7 @@ module MB
         @rightmost = h.rightmost if @rightmost.nil? || h.rightmost > @rightmost
         points.concat(h.points)
         points.sort! # TODO: If +h+ is always right of self, then this sort is unnecessary
+        self
       end
 
       # Returns the upper and lower tangents linking this left-side hull to the
@@ -440,9 +441,49 @@ module MB
     #
     # Called MERGE in Lee and Schachter.
     def merge(left, right)
-      (l_l, l_r), (u_l, u_r) = left.tangents(right)
+      (l, r), (u_l, u_r) = left.tangents(right)
 
-      raise NotImplementedError
+      until l == u_l && r == u_r
+        a = false
+        b = false
+        join(l, r)
+
+        r1 = r.clockwise(l)
+        if r1.left_of?(l, r)
+          r2 = r.clockwise(r1)
+          until outside?(r1, l, r, r2)
+            unjoin(r, r1)
+            r1 = r2
+            r2 = r.clockwise(r1)
+          end
+        else
+          a = true
+        end
+
+        l1 = l.counterclockwise(r)
+        if l1.right_of?(r, l)
+          l2 = l.counterclockwise(l1)
+          until outside?(l, r, l1, l2)
+            unjoin(l, l1)
+            l1 = l2
+            l2 = l.counterclockwise(l1)
+          end
+        else
+          b = true
+        end
+
+        if a
+          l = l1
+        elsif b
+          r = r1
+        elsif outside?(l, r, r1, l1)
+          r = r1
+        else
+          l = l1
+        end
+      end
+
+      left.add_hull(right)
     end
 
     # Returns true if the query point +q+ is not inside the circumcircle
