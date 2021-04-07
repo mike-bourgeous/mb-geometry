@@ -198,8 +198,12 @@ module MB
       # circular doubly-linked list.
       def clockwise(p)
         return nil if p.nil?
-        # XXX @cw[p] || (raise "Point #{p} is not a neighbor of #{self}")
-        @neighbors[@neighbors.index(p) - 1] # XXX FIXME hack to get this working
+        orig_n = @cw[p] || (raise "Point #{p} is not a neighbor of #{self}")
+        n = @neighbors[@neighbors.index(p) - 1] # XXX FIXME hack to get this working
+
+        puts "NOTE: neighbors #{n} differs from @cw #{orig_n}" if n != orig_n # XXX
+
+        n
       end
 
       # Returns the next counterclockwise neighbor to this point from point
@@ -208,8 +212,12 @@ module MB
       # Called SUCC in Lee and Schachter.
       def counterclockwise(p)
         return nil if p.nil?
-        # XXX @ccw[p] || (raise "Point #{p} is not a neighbor of #{self}")
-        @neighbors[(@neighbors.index(p) + 1) % @neighbors.length] # XXX FIXME: hack to provide invariants
+        orig_n = @ccw[p] || (raise "Point #{p} is not a neighbor of #{self}")
+        n = @neighbors[(@neighbors.index(p) + 1) % @neighbors.length] # XXX FIXME: hack to provide invariants
+
+        puts "NOTE: neighbors #{n} differs from @ccw #{orig_n}" if n != orig_n # XXX
+
+        n
       end
 
       def first

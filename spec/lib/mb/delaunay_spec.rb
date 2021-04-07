@@ -244,7 +244,6 @@ RSpec.describe(MB::Delaunay) do
     pending '#first'
     pending '#clockwise'
     pending '#counterclockwise'
-    pending '#remove'
 
     describe '#add' do
       cases = {
@@ -300,6 +299,25 @@ RSpec.describe(MB::Delaunay) do
 
         p1.add(p10)
         expect { p1.add(p2) }.to raise_error(/direction/)
+      end
+    end
+
+    describe '#remove' do
+      it 'rejoins adjacent neighbors' do
+        p1.add(p2)
+        p1.add(p4)
+        p1.add(p3)
+
+        expect(p1.counterclockwise(p2)).to eq(p4)
+        expect(p1.clockwise(p2)).to eq(p3)
+
+        p1.remove(p4)
+        expect(p1.counterclockwise(p2)).to eq(p3)
+        expect(p1.clockwise(p2)).to eq(p3)
+
+        p1.remove(p2)
+        expect(p1.counterclockwise(p3)).to eq(p3)
+        expect(p1.clockwise(p3)).to eq(p3)
       end
     end
 
