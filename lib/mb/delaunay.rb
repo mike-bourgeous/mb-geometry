@@ -1,8 +1,11 @@
 require 'matrix'
 require 'forwardable'
 
-def loglog(s)
-  puts "#{' ' * caller.length}#{s}"
+def loglog(s = nil)
+  if $DEBUG || ENV['DEBUG']
+    s = yield if block_given?
+    puts "#{' ' * caller.length}#{s}"
+  end
 end
 
 module MB
@@ -204,7 +207,7 @@ module MB
         orig_n = @cw[p] || (raise "Point #{p} is not a neighbor of #{self}")
         n = @neighbors[@neighbors.index(p) - 1] # XXX FIXME hack to get this working
 
-        loglog "NOTE: neighbors #{n} differs from @cw #{orig_n}" if n != orig_n # XXX
+        loglog { "NOTE: neighbors #{n} differs from @cw #{orig_n}" } if n != orig_n # XXX
 
         n
       end
@@ -218,7 +221,7 @@ module MB
         orig_n = @ccw[p] || (raise "Point #{p} is not a neighbor of #{self}")
         n = @neighbors[(@neighbors.index(p) + 1) % @neighbors.length] # XXX FIXME: hack to provide invariants
 
-        loglog "NOTE: neighbors #{n} differs from @ccw #{orig_n}" if n != orig_n # XXX
+        loglog { "NOTE: neighbors #{n} differs from @ccw #{orig_n}" } if n != orig_n # XXX
 
         n
       end
@@ -236,18 +239,18 @@ module MB
         raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if @cw.include?(p) || @ccw.include?(p) || @neighbors.include?(p)
         raise "BUG: @cw and @ccw have differing lengths on #{self.inspect}" if @cw.length != @ccw.length
 
-        loglog "\e[33mInserting \e[1m#{p.inspect}\e[22m into adjacency list of \e[1m#{self.inspect}\e[0m"
+        loglog { "\e[33mInserting \e[1m#{p.inspect}\e[22m into adjacency list of \e[1m#{self.inspect}\e[0m" }
 
         # XXX hack to get the invariants working slowly; remove this later
         @neighbors << p
         @neighbors.sort_by! { |p| self.angle(p) } # FIXME: this doesn't catch a neighbor in the same direction as another
 
         if @cw.empty?
-          loglog "\e[33m No existing neighbors on #{self}; #{p} is its own adjacent neighbor" # XXX
+          loglog { "\e[33m No existing neighbors on #{self}; #{p} is its own adjacent neighbor" } # XXX
           @cw[p] = p
           @ccw[p] = p
         else
-          loglog "\e[33m #{@cw.length} existing neighbors on #{self}; looking for the right place for #{p}\e[0m" # XXX
+          loglog { "\e[33m #{@cw.length} existing neighbors on #{self}; looking for the right place for #{p}\e[0m" } # XXX
 
           # TODO: @first, and also this is O(edges per node)
           start = first
@@ -262,17 +265,17 @@ module MB
           # opposite side of self from existing neighbors; maybe need to use
           # atan2
           loop do
-            loglog "Checking #{self}->#{ptr} while direction is #{direction.equal?(@cw) ? 'clockwise' : (direction.equal?(@ccw) ? 'counterclockwise' : 'unknown')}" # XXX
+            loglog { "Checking #{self}->#{ptr} while direction is #{direction.equal?(@cw) ? 'clockwise' : (direction.equal?(@ccw) ? 'counterclockwise' : 'unknown')}" } # XXX
             cross = p.cross(self, ptr)
             if cross < 0
               direction ||= @cw
-              loglog " New point #{p} is right of #{self}->#{ptr}, moving clockwise" # XXX
+              loglog { " New point #{p} is right of #{self}->#{ptr}, moving clockwise" } # XXX
 
               # p is to the right of self->ptr, so iterate clockwise to find surrounding neighbors
               ptr_next = @cw[ptr]
 
               if ptr == ptr_next || ptr_next == start || p.cross(self, ptr_next) > 0
-                loglog "  It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" # XXX
+                loglog { "  It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" } # XXX
                 @cw[p] = ptr_next
                 @cw[ptr] = p
                 @ccw[ptr_next] = p
@@ -284,12 +287,12 @@ module MB
               end
             elsif cross > 0
               direction ||= @ccw
-              loglog " New point #{p} is left of #{self}->#{ptr}, moving counterclockwise" # XXX
+              loglog { " New point #{p} is left of #{self}->#{ptr}, moving counterclockwise" } # XXX
 
               ptr_next = @ccw[ptr]
 
               if ptr == ptr_next || ptr_next == start || p.cross(self, ptr_next) < 0
-                loglog " It looks like #{p} goes between #{ptr_next} and #{ptr} on #{self}" # XXX
+                loglog { " It looks like #{p} goes between #{ptr_next} and #{ptr} on #{self}" } # XXX
                 @ccw[p] = ptr_next
                 @ccw[ptr] = p
                 @cw[ptr_next] = p
@@ -303,7 +306,7 @@ module MB
               # This would create a zero-area triangle between self->ptr->p
               raise "New point #{p.inspect} is in the same direction from #{self.inspect} as existing neighbor #{ptr.inspect}"
             else
-              loglog " New point is collinear but on opposite side of existing neighbor #{ptr}; continuing in #{direction.equal?(@cw) ? 'clockwise' : (direction.equal?(@ccw) ? 'counterclockwise' : 'unknown')} direction"
+              loglog { " New point is collinear but on opposite side of existing neighbor #{ptr}; continuing in #{direction.equal?(@cw) ? 'clockwise' : (direction.equal?(@ccw) ? 'counterclockwise' : 'unknown')} direction" }
               direction ||= @ccw
 
               ptr_next = direction[ptr]
@@ -311,7 +314,7 @@ module MB
               other_direction = direction.equal?(@cw) ? @ccw : @cw
 
               if ptr == ptr_next || ptr_next == start || (direction == @cw && next_cross > 0) || (direction == @ccw && next_cross < 0)
-                loglog "It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" # XXX
+                loglog { "It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" } # XXX
                 direction[p] = ptr_next
                 direction[ptr] = p
                 other_direction[ptr_next] = p
@@ -329,7 +332,7 @@ module MB
         @first = p if @first.nil? || set_first
 
         if @cw.length != @ccw.length
-          loglog " \e[1;31m@cw has length #{@cw.length} @ccw has length #{@ccw.length}\e[0m"
+          loglog { " \e[1;31m@cw has length #{@cw.length} @ccw has length #{@ccw.length}\e[0m" }
           require 'pry'
           loglog Pry::ColorPrinter.pp({cw: @cw, ccw: @ccw}, '', 80)
         end
@@ -385,21 +388,21 @@ module MB
     #
     # Analogous to INSERT(A, B) from Lee and Schachter.
     def join(p1, p2, set_first)
-      loglog "\e[32mConnecting \e[1m#{p1}\e[22m to \e[1m#{p2}\e[0m"
+      loglog { "\e[32mConnecting \e[1m#{p1}\e[22m to \e[1m#{p2}\e[0m" }
       p1.add(p2, set_first)
       p2.add(p1)
     end
 
     # Analogous to DELETE(A, B) from Lee and Schachter.
     def unjoin(p1, p2)
-      loglog "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[0m"
+      loglog { "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[0m" }
       p1.remove(p2)
       p2.remove(p1)
     end
 
     # Pass a sorted list of points.
     def triangulate(points)
-      loglog "\e[34mTriangulating \e[1m#{points.length}\e[22m points\e[0m"
+      loglog { "\e[34mTriangulating \e[1m#{points.length}\e[22m points\e[0m" }
 
       case points.length
       when 0
@@ -456,7 +459,7 @@ module MB
         left = points[0...n]
         right = points[n..-1]
 
-        loglog "\e[36mSplitting into \e[1m#{left.length}\e[22m and \e[1m#{right.length}\e[22m points...\e[0m"
+        loglog { "\e[36mSplitting into \e[1m#{left.length}\e[22m and \e[1m#{right.length}\e[22m points...\e[0m" }
 
         merge(triangulate(left), triangulate(right))
       end
@@ -467,11 +470,11 @@ module MB
     #
     # Called MERGE in Lee and Schachter.
     def merge(left, right)
-      loglog "\e[35mMerging \e[1m#{left.length}\e[22m points on the left with \e[1m#{right.length}\e[22m points on the right\e[0m"
+      loglog { "\e[35mMerging \e[1m#{left.length}\e[22m points on the left with \e[1m#{right.length}\e[22m points on the right\e[0m" }
 
       (l_l, l_r), (u_l, u_r) = left.tangents(right)
 
-      loglog "\e[36mTangents are \e[1m#{l_l} -> #{l_r}\e[22m and \e[1m#{u_l} -> #{u_r}\e[0m"
+      loglog { "\e[36mTangents are \e[1m#{l_l} -> #{l_r}\e[22m and \e[1m#{u_l} -> #{u_r}\e[0m" }
 
       l = l_l
       r = l_r
