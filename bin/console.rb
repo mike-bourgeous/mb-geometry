@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'bundler/setup'
+
 require 'pry'
 require 'pry-byebug'
 
