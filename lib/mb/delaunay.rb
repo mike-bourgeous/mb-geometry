@@ -355,6 +355,8 @@ module MB
         # Remove from ccw and re-link ccw
         @ccw[next_cw] = next_ccw
         @ccw.delete(p)
+
+        @first = @neighbors.first if @first == p # XXX use @ccw
       end
     end
 
@@ -390,7 +392,7 @@ module MB
 
     # Analogous to DELETE(A, B) from Lee and Schachter.
     def unjoin(p1, p2)
-      loglog "\e[31mDisconnecting \e[1m#{p1}\e[22m to \e[1m#{p2}\e[0m"
+      loglog "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[0m"
       p1.remove(p2)
       p2.remove(p1)
     end
