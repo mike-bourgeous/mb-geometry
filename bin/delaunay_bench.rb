@@ -12,7 +12,7 @@ require 'json'
 $:.unshift(File.join(__dir__, '..', 'lib'))
 require 'mb/delaunay'
 
-random = Random.new(0)
+random = Random.new(ENV['RANDOM_SEED']&.to_i || 0)
 
 count = ARGV[0]&.to_i || 100
 points = count.times.map {
