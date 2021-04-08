@@ -387,6 +387,7 @@ module MB
     def initialize(points)
       @points = points.map { |x, y| Point.new(x, y) }
       @points.sort! # Point implements <=> to sort by X and break ties by Y
+      @outside_test = nil
       triangulate(@points)
     end
 
@@ -423,11 +424,11 @@ module MB
       require 'json'
       @json_idx ||= 0
 
-      @last_json ||= to_a
-      this_json = to_a
+      @last_json ||= nil
+      this_json = { points: self.to_a, outside_test: @outside_test }
       if @last_json != this_json
         loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
-        File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(to_a))
+        File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))
         @json_idx += 1
         @last_json = this_json
       end
@@ -644,6 +645,8 @@ module MB
       # and runs one final iteration.
       join(u_r, u_l, true)
 
+      save_json # XXX
+
       left.points.each do |p|
         p.name = nil
       end
@@ -661,6 +664,10 @@ module MB
     def outside?(p1, p2, p3, q)
       # TODO: memoize circumcircle and relative-angle computations?
       x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+
+      @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: r }
+      save_json # XXX
+      @outside_test = nil
 
       binding.pry if x.nil? || y.nil? || r.nil? || q.nil? # XXX
 
