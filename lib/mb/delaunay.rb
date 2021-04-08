@@ -227,9 +227,18 @@ module MB
       # circular doubly-linked list.
       def clockwise(p)
         return nil if p.nil?
-        orig_n = @cw[p] || (raise "Point #{p} is not a neighbor of #{self}")
 
-        base_idx = @neighbors.index(p)
+        # FIXME: the MERGE algorithm tries to navigate clockwise/counterclockwise from a point immediately after disconnecting it
+
+        orig_n = @cw[p] # XXX || (raise "Point #{p} is not a neighbor of #{self}")
+
+        if orig_n
+          base_idx = @neighbors.index(p)
+        else
+          loglog { "\e[31mPoint #{p} is not a neighbor of #{self}; looking anyway...\e[0m" }
+          base_idx = @neighbors.bsearch_index { |n| self.angle(n) > p.angle(p) }
+        end
+
         idx = base_idx
         n = nil
         loop do
@@ -253,9 +262,16 @@ module MB
       # Called SUCC in Lee and Schachter.
       def counterclockwise(p)
         return nil if p.nil?
-        orig_n = @ccw[p] || (raise "Point #{p} is not a neighbor of #{self}")
 
-        base_idx = @neighbors.index(p)
+        orig_n = @ccw[p] # XXX || (raise "Point #{p} is not a neighbor of #{self}")
+
+        if orig_n
+          base_idx = @neighbors.index(p)
+        else
+          loglog { "\e[31mPoint #{p} is not a neighbor of #{self}; looking anyway...\e[0m" }
+          base_idx = @neighbors.bsearch_index { |n| self.angle(n) >= p.angle(p) }
+        end
+
         idx = base_idx
         n = nil
         loop do
