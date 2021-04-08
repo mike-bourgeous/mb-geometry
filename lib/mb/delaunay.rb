@@ -388,6 +388,7 @@ module MB
       @points = points.map { |x, y| Point.new(x, y) }
       @points.sort! # Point implements <=> to sort by X and break ties by Y
       @outside_test = nil
+      @tangents = nil
       triangulate(@points)
     end
 
@@ -425,7 +426,7 @@ module MB
       @json_idx ||= 0
 
       @last_json ||= nil
-      this_json = { points: self.to_a, outside_test: @outside_test }
+      this_json = { points: self.to_a, outside_test: @outside_test, tangents: @tangents }
       if @last_json != this_json
         loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
         File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))
@@ -537,6 +538,11 @@ module MB
       loglog { "\e[35mMerging \e[1m#{left.length}\e[22m points on the left with \e[1m#{right.length}\e[22m points on the right\e[0m" }
 
       (l_l, l_r), (u_l, u_r) = left.tangents(right)
+
+      @tangents = [
+        [[l_l.x, l_l.y], [l_r.x, l_r.y]],
+        [[u_l.x, u_l.y], [u_r.x, u_r.y]],
+      ]
 
       loglog { "\e[36mTangents are \e[1m#{l_l} -> #{l_r}\e[22m and \e[1m#{u_l} -> #{u_r}\e[0m" }
 
@@ -654,6 +660,8 @@ module MB
         p.name = nil
       end
 
+      @tangents = nil
+
       left.add_hull(right).tap { save_json }
     end
 
@@ -662,8 +670,12 @@ module MB
     #
     # Analogous to QTEST(H, I, J, K) in Lee and Schachter.
     def outside?(p1, p2, p3, q)
+      loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " }
+
       # TODO: memoize circumcircle and relative-angle computations?
       x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+
+      loglog { " X: #{x.inspect} Y: #{y.inspect} R: #{r.inspect}" }
 
       @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: r }
       save_json # XXX
