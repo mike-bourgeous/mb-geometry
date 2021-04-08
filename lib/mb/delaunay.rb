@@ -235,8 +235,8 @@ module MB
         if orig_n
           base_idx = @neighbors.index(p)
         else
-          loglog { "\e[31mPoint #{p} is not a neighbor of #{self}; looking anyway...\e[0m" }
-          base_idx = @neighbors.bsearch_index { |n| self.angle(n) > p.angle(p) }
+          loglog { "\e[31mPoint #{p} is not a neighbor of #{self}; looking clockwise anyway...\e[0m" }
+          base_idx = (@neighbors.bsearch_index { |n| self.angle(n) > p.angle(p) }) % @neighbors.length
         end
 
         idx = base_idx
@@ -268,17 +268,19 @@ module MB
         if orig_n
           base_idx = @neighbors.index(p)
         else
-          loglog { "\e[31mPoint #{p} is not a neighbor of #{self}; looking anyway...\e[0m" }
-          base_idx = @neighbors.bsearch_index { |n| self.angle(n) >= p.angle(p) }
+          loglog { "\e[31mPoint #{p} is not a neighbor of #{self}; looking counterclockwise anyway...\e[0m" }
+          base_idx = (@neighbors.bsearch_index { |n| self.angle(n) >= p.angle(p) } - 1) % @neighbors.length
         end
 
         idx = base_idx
         n = nil
         loop do
+          loglog { "Checking idx #{idx}" } # XXX
+
           # Skip newly added neighbors during a hull merge; not sure if this is
           # a proper fix for the point-walk ending up on the wrong hull, or if
           # it causes new problems
-          idx = (idx + 1) % @neighbors.length
+          idx = (idx + 1) % @neighbors.length # FIXME not sure if this is the right offset in the case of bsearch
           n = @neighbors[idx] # XXX FIXME hack to get this working
 
           break if n.hull == hull || idx == base_idx
@@ -499,8 +501,8 @@ module MB
     end
 
     # Analogous to DELETE(A, B) from Lee and Schachter.
-    def unjoin(p1, p2)
-      loglog { "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[0m" }
+    def unjoin(p1, p2, whence = nil)
+      loglog { "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[22m #{whence}\e[0m" }
       p1.remove(p2)
       p2.remove(p1)
 
@@ -630,7 +632,7 @@ module MB
           save_json # XXX
 
           until outside?(r1, l, r, r2)
-            unjoin(r, r1)
+            unjoin(r, r1, 'from the right')
 
             r1&.name = nil
             r2&.name = nil
@@ -658,7 +660,7 @@ module MB
           save_json # XXX
 
           until outside?(l, r, l1, l2)
-            unjoin(l, l1)
+            unjoin(l, l1, 'from the left')
 
             l1&.name = nil
             l2&.name = nil
