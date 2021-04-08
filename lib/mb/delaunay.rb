@@ -118,13 +118,14 @@ module MB
     class Point
       include Comparable
 
-      attr_reader :x, :y
+      attr_reader :x, :y, :name
 
-      attr_accessor :hull, :name
+      attr_accessor :hull
 
-      def initialize(x, y)
+      def initialize(x, y, idx = nil)
         @x = x
         @y = y
+        @idx = idx
 
         @cw = {}
         @ccw = {}
@@ -132,6 +133,15 @@ module MB
         @first = nil
         @hull = nil
         @name = nil
+      end
+
+      # Sets a name for this point (+n+ will be prefixed by the point's index).
+      def name=(n)
+        if n.nil?
+          @name = nil
+        else
+          @name = "#{@idx}: #{n}"
+        end
       end
 
       # Compares points by X, using Y to break ties.
@@ -150,7 +160,7 @@ module MB
       end
 
       def to_s
-        "[#{@x}, #{@y}]{#{@cw.length}}"
+        "#{@idx}: [#{@x}, #{@y}]{#{@cw.length}}"
       end
 
       def inspect
@@ -409,7 +419,7 @@ module MB
     # MB::Delaunay::Point#neighbors method to access the neighbor graph after
     # construction.
     def initialize(points)
-      @points = points.map { |x, y| Point.new(x, y) }
+      @points = points.map.with_index { |(x, y), idx| Point.new(x, y, idx) }
       @points.sort! # Point implements <=> to sort by X and break ties by Y
       @outside_test = nil
       @tangents = nil
