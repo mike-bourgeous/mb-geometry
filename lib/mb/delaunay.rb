@@ -218,7 +218,19 @@ module MB
       def clockwise(p)
         return nil if p.nil?
         orig_n = @cw[p] || (raise "Point #{p} is not a neighbor of #{self}")
-        n = @neighbors[@neighbors.index(p) - 1] # XXX FIXME hack to get this working
+
+        base_idx = @neighbors.index(p)
+        idx = base_idx
+        n = nil
+        loop do
+          # Skip newly added neighbors during a hull merge; not sure if this is
+          # a proper fix for the point-walk ending up on the wrong hull, or if
+          # it causes new problems
+          idx = (idx - 1) % @neighbors.length
+          n = @neighbors[idx] # XXX FIXME hack to get this working
+
+          break if n.hull == hull || idx == base_idx
+        end
 
         loglog { "NOTE: neighbors #{n} differs from @cw #{orig_n}" } if n != orig_n # XXX
 
@@ -232,7 +244,19 @@ module MB
       def counterclockwise(p)
         return nil if p.nil?
         orig_n = @ccw[p] || (raise "Point #{p} is not a neighbor of #{self}")
-        n = @neighbors[(@neighbors.index(p) + 1) % @neighbors.length] # XXX FIXME: hack to provide invariants
+
+        base_idx = @neighbors.index(p)
+        idx = base_idx
+        n = nil
+        loop do
+          # Skip newly added neighbors during a hull merge; not sure if this is
+          # a proper fix for the point-walk ending up on the wrong hull, or if
+          # it causes new problems
+          idx = (idx + 1) % @neighbors.length
+          n = @neighbors[idx] # XXX FIXME hack to get this working
+
+          break if n.hull == hull || idx == base_idx
+        end
 
         loglog { "NOTE: neighbors #{n} differs from @ccw #{orig_n}" } if n != orig_n # XXX
 
@@ -256,7 +280,7 @@ module MB
 
         # XXX hack to get the invariants working slowly; remove this later
         @neighbors << p
-        @neighbors.sort_by! { |p| self.angle(p) } # FIXME: this doesn't catch a neighbor in the same direction as another
+        @neighbors.sort_by! { |p| self.angle(p) } # FIXME: this doesn't prevent a neighbor in the same exact direction as another
 
         if @cw.empty?
           loglog { "\e[33m No existing neighbors on #{self}; #{p} is its own adjacent neighbor" } # XXX
@@ -569,8 +593,6 @@ module MB
         b = false
 
         join(l, r, l == l_l && r == l_r)
-
-        # FIXME: r.clockwise(r1) is returning a newly joined lower-tangent neighbor for bad_bench_minimized.json
 
         r1 = r.clockwise(l)
         r1.name = 'R1'

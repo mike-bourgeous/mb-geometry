@@ -16,6 +16,13 @@ Guibas and Stolfi, which the ACM still charges for and thus I have not read.
   is a linear structure, but then accessed using two-parameter functions PRED
   and SUCC making it seem like a two dimensional (page 226 of the below-linked
   PDF).  Later, mention is made
+- The paper doesn't specify when mutations of variables are to occur.  When
+  mutations are performed exactly as listed in the paper's MERGE subroutine,
+  the clockwise and counterclockwise navigation functions (PRED and SUCC) get
+  confused by newly added or removed edges.  This can cause the point-walk on
+  the right and left side hulls to cross over to the wrong hull, and also try
+  to navigate around a point that has been removed (and thus is no longer in
+  the adjacency list).
 
 ## References
 
