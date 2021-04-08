@@ -118,7 +118,7 @@ module MB
     class Point
       include Comparable
 
-      attr_reader :x, :y, :name
+      attr_reader :x, :y
 
       attr_accessor :hull
 
@@ -133,6 +133,10 @@ module MB
         @first = nil
         @hull = nil
         @name = nil
+      end
+
+      def name
+        @name || "#{@idx}"
       end
 
       # Sets a name for this point (+n+ will be prefixed by the point's index).
@@ -437,6 +441,7 @@ module MB
     # MB::Delaunay::Point#neighbors method to access the neighbor graph after
     # construction.
     def initialize(points)
+      points.sort! # XXX
       @points = points.map.with_index { |(x, y), idx| Point.new(x, y, idx) }
       @points.sort! # Point implements <=> to sort by X and break ties by Y
       @outside_test = nil

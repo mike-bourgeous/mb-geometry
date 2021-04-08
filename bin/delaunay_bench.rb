@@ -33,7 +33,7 @@ rescue => e
   filename = File.join(__dir__, '..', 'test_data', Time.now.strftime("%Y-%m-%d_%H-%M-%S_bad_bench.json"))
   puts "Saving problematic points to \e[1m#{filename}\e[0m\n\n"
 
-  File.write(filename, JSON.pretty_generate(t.points.map { |p| { x: p.x, y: p.y } }))
+  File.write(filename, JSON.pretty_generate(points.sort.map { |p| { x: p[0], y: p[1] } }))
 
   raise
 end
