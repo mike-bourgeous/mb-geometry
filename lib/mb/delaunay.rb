@@ -150,10 +150,9 @@ module MB
 
       # Compares points by X, using Y to break ties.
       #
-      # Lee and Schachter refer to this as lexicographic ordering.
+      # Lee and Schachter refer to this as lexicographic ordering.  It's what
+      # would happen naturally if you sorted a point array in Ruby by [x, y].
       def <=>(other)
-        return nil unless other.is_a?(Point)
-
         if x < other.x || (x == other.x && y < other.y)
           -1
         elsif x == other.x && y == other.y
