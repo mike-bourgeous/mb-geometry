@@ -164,6 +164,12 @@ module MB
         end
       end
 
+      # Returns true if the other point has the same coordinates as this point.
+      # Overrides Comparable#== because this is faster.
+      def ==(other)
+        other.x == x && other.y == y
+      end
+
       def to_s
         "#{@idx}: [#{@x}, #{@y}]{#{@neighbors.length}}"
       end
