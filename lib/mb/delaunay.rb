@@ -142,6 +142,14 @@ module MB
         end
       end
 
+      def <(other)
+        x < other.x || x == other.x && y < other.y
+      end
+
+      def >(other)
+        x > other.x || x == other.x && y > other.y
+      end
+
       def to_s
         "#{@idx}: [#{@x}, #{@y}]{#{@neighbors.length}}"
       end
@@ -299,13 +307,16 @@ module MB
       triangles = Set.new
       @points.each do |p|
         p.neighbors.each do |n|
-          key = [p, n].sort!
+          key = n > p ? [p, n] : [n, p]
           next if traversed.include?(key)
           traversed << key
 
           ncw = n.clockwise(p)
           pccw = p.counterclockwise(n)
           if ncw == pccw
+            # TODO: There are still a lot of cases where a triangle is already
+            # in the set; try to find a way to skip more of that duplicated
+            # work
             triangles << [n, p, ncw].sort
           end
         end
