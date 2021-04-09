@@ -479,6 +479,7 @@ module MB
     end
 
     def save_json
+      return unless $DEBUG || ENV['DEBUG']
       require 'json'
       @json_idx ||= 0
 
