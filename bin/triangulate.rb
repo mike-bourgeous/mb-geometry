@@ -28,6 +28,8 @@ else
   raise "Unknown extension #{File.extname(ARGV[0])}"
 end
 
+points = points[:points] if points.is_a?(Hash)
+
 t = MB::Delaunay.new(points.map { |p| [p[:x], p[:y]] })
 
 # TODO: Use MB::Sound::U.highlight after refactoring utilities elsewhere

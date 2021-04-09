@@ -477,13 +477,17 @@ module MB
       }
     end
 
+    def to_h
+      { points: self.to_a, outside_test: @outside_test, tangents: @tangents }
+    end
+
     def save_json
       return unless $DEBUG || ENV['DEBUG']
       require 'json'
       @json_idx ||= 0
 
       @last_json ||= nil
-      this_json = { points: self.to_a, outside_test: @outside_test, tangents: @tangents }
+      this_json = to_h
       if @last_json != this_json
         loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
         File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))

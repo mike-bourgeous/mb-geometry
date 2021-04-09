@@ -453,4 +453,6 @@ RSpec.describe(MB::Delaunay) do
   pending 'symmetric reflections'
   pending 'regular polygons with a single central point'
   pending 'nested polygons'
+  pending 'very tall skinny triangles'
+  pending 'very wide skinny triangles'
 end
