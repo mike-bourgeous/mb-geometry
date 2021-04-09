@@ -153,7 +153,15 @@ module MB
       # Returns an angle from self to +p+ from -PI to PI starting at the
       # negative X axis.
       def angle(p)
-        Math.atan2(p.y - self.y, p.x - self.x)
+        #Math.atan2(p.y - self.y, p.x - self.x)
+        #
+        # https://stackoverflow.com/questions/16542042/fastest-way-to-sort-vectors-by-angle-without-actually-computing-that-angle
+
+        dx = p.x - @x
+        dy = p.y - @y
+        v = (1.0 - dx / (dx.abs + dy.abs)).abs
+        v = -v if dy < 0
+        v
       end
 
       # Returns the 2D cross product between the two rays +o+->+p+ and
