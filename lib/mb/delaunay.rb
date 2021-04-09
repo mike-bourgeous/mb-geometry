@@ -730,7 +730,9 @@ module MB
       # TODO: memoize circumcircle and relative-angle computations?
       x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
 
-      loglog { " X: #{x.inspect} Y: #{y.inspect} R: #{r.inspect}" }
+      d = Math.sqrt((q.x - x) ** 2 + (q.y - y) ** 2) if x && y && r
+
+      loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R: #{r.inspect} D: #{d.inspect} \e[1m#{d >= r}\e[0m" }
 
       @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: r }
       save_json # XXX
@@ -738,7 +740,9 @@ module MB
 
       binding.pry if x.nil? || y.nil? || r.nil? || q.nil? # XXX
 
-      d = Math.sqrt((q.x - x) ** 2 + (q.y - y) ** 2)
+      # FIXME: this is returning false because of rounding error:
+      # X: -6.3634830897919485 Y: 0.17103413867402217 R: 5.855888311853681 D: 5.85588831185368 false
+
       d >= r
     end
 
