@@ -173,7 +173,7 @@ module MB
       # positive X axis.
       def angle(p)
         a = Math.atan2(p.y - self.y, p.x - self.x)
-        a += 2.0 * Math::PI if a < 0
+        #a += 2.0 * Math::PI if a < 0
         a
       end
 
@@ -475,7 +475,9 @@ module MB
 
       x, y, rsquared = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
 
-      dsquared = (q.x - x) ** 2 + (q.y - y) ** 2
+      dx = q.x - x
+      dy = q.y - y
+      dsquared = dx * dx + dy * dy
 
       dsquared.round(12) >= rsquared.round(12)
     end
@@ -507,7 +509,9 @@ module MB
       x, y = circumcenter(x1, y1, x2, y2, x3, y3)
       return nil unless x
 
-      rsquared = (x - x1) ** 2 + (y - y1) ** 2
+      dx = x - x1
+      dy = y - y1
+      rsquared = dx * dx + dy * dy
       [x, y, rsquared]
     end
 
