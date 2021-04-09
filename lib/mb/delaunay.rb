@@ -1,11 +1,13 @@
 require 'matrix'
 require 'forwardable'
 
-def loglog(s = nil)
-  if $DEBUG || ENV['DEBUG']
+if $DEBUG || ENV['DEBUG']
+  def loglog(s = nil)
     s = yield if block_given?
     puts "#{' ' * caller.length}#{s}"
   end
+else
+  def loglog(s=nil); end
 end
 
 module MB
@@ -481,19 +483,22 @@ module MB
       { points: self.to_a, outside_test: @outside_test, tangents: @tangents }
     end
 
-    def save_json
-      return unless $DEBUG || ENV['DEBUG']
+    if $DEBUG || ENV['DEBUG']
       require 'json'
-      @json_idx ||= 0
+      def save_json
+        @json_idx ||= 0
 
-      @last_json ||= nil
-      this_json = to_h
-      if @last_json != this_json
-        loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
-        File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))
-        @json_idx += 1
-        @last_json = this_json
+        @last_json ||= nil
+        this_json = to_h
+        if @last_json != this_json
+          loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
+          File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))
+          @json_idx += 1
+          @last_json = this_json
+        end
       end
+    else
+      def save_json; end
     end
 
     private
