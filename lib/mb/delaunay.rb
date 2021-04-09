@@ -681,8 +681,8 @@ module MB
     # intersection exists.  Returns nil if the lines are coincident or there is
     # no intersection.
     def self.line_intersection(line1, line2)
-      line1 = line1[1..3] if line1[0] == :l
-      line2 = line2[1..3] if line2[0] == :l
+      line1 = line1[1..3] if :l == line1[0]
+      line2 = line2[1..3] if :l == line2[0]
       a, b, c = line1
       d, e, f = line2
 
