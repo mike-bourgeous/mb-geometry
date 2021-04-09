@@ -15,7 +15,7 @@ Guibas and Stolfi, which the ACM still charges for and thus I have not read.
 - The adjacency list is specified as being a circular doubly-linked list, which
   is a linear structure, but then accessed using two-parameter functions PRED
   and SUCC making it seem like a two dimensional (page 226 of the below-linked
-  PDF).  Later, mention is made
+  PDF).  Later, mention is made of individual adjacency lists.
 - The paper doesn't specify when mutations of variables are to occur.  When
   mutations are performed exactly as listed in the paper's MERGE subroutine,
   the clockwise and counterclockwise navigation functions (PRED and SUCC) get
@@ -23,6 +23,9 @@ Guibas and Stolfi, which the ACM still charges for and thus I have not read.
   the right and left side hulls to cross over to the wrong hull, and also try
   to navigate around a point that has been removed (and thus is no longer in
   the adjacency list).
+- It's not really clear how the FIRST function is supposed to operate.  I'm
+  just manually marking an edge as "first" when I know it's part of a convex
+  hull.
 
 ## References
 
