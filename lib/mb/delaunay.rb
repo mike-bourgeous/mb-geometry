@@ -487,7 +487,7 @@ module MB
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
-      dsquared.round(12) >= rsquared.round(12)
+      dsquared.round(9) >= rsquared.round(9)
     end
 
     public

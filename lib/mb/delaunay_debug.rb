@@ -632,7 +632,7 @@ module MB
         @outside_test = nil
       end
 
-      dsquared.round(12) >= rsquared.round(12)
+      dsquared.round(9) >= rsquared.round(9)
     end
 
     public
