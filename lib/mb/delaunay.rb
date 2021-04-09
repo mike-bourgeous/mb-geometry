@@ -294,6 +294,26 @@ module MB
       { points: self.to_a }
     end
 
+    def triangles
+      traversed = Set.new
+      triangles = Set.new
+      @points.each do |p|
+        p.neighbors.each do |n|
+          key = [p, n].sort!
+          next if traversed.include?(key)
+          traversed << key
+
+          ncw = n.clockwise(p)
+          pccw = p.counterclockwise(n)
+          if ncw == pccw
+            triangles << [n, p, ncw].sort
+          end
+        end
+      end
+
+      triangles.to_a
+    end
+
     private
 
     # Creates an edge between two points.

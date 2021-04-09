@@ -19,12 +19,14 @@ points = count.times.map {
   [random.rand(-1.0..1.0), random.rand(-1.0..1.0)]
 }
 
+v = nil
 t = nil
 
 begin
   elapsed = Benchmark.realtime do
     100.times do
-      t = MB::Delaunay.new(points)
+      v = MB::Delaunay.new(points)
+      t = v.triangles
     end
   end
 rescue => e
@@ -39,9 +41,9 @@ rescue => e
 end
 
 puts Pry::ColorPrinter.pp(
-  t.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h,
+  v.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h,
   '',
   80
 )
 
-puts "\n\e[1m#{elapsed}\e[0m seconds for \e[1m#{points.length}\e[0m points\n\n"
+puts "\n\e[1m#{elapsed}\e[0m seconds for \e[1m#{points.length}\e[0m points and \e[1m#{t.length}\e[0m triangles\n\n"
