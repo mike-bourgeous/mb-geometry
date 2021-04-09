@@ -283,9 +283,12 @@ module MB
 
         loglog { "\e[33mInserting \e[1m#{p.inspect}\e[22m into adjacency list of \e[1m#{self.inspect}\e[0m" }
 
-        @neighbors << p
         @pointset << p.__id__
-        @neighbors.sort_by! { |p| self.angle(p) } # FIXME: this doesn't prevent a neighbor in the same exact direction as another
+
+        angle = self.angle(p)
+        prior_idx = @neighbors.bsearch_index { |n| self.angle(n) >= angle }
+        @neighbors.insert(prior_idx || @neighbors.length, p)
+
         @first = p if @first.nil? || set_first
       end
 
