@@ -27,8 +27,7 @@ module MB
       end
 
       def add_hull(h)
-        @leftmost = h.leftmost if @leftmost.nil? || h.leftmost < @leftmost
-        @rightmost = h.rightmost if @rightmost.nil? || h.rightmost > @rightmost
+        @rightmost = h.rightmost
         points.concat(h.points)
 
         h.points.each do |p| p.hull = self end
@@ -41,12 +40,6 @@ module MB
       #
       # Called HULL in Lee and Schachter (extended to return both tangents).
       def tangents(right)
-        if self.rightmost > right.leftmost
-          raise "Rightmost point on left-side hull #{self} is to the right of leftmost point on right-side hull #{right}"
-        end
-
-        raise "Cannot find tangents for empty hulls" if self.count == 0 || right.count == 0
-
         left = self
 
         max_count = left.count + right.count
@@ -75,8 +68,6 @@ module MB
           end
         end
 
-        raise "BUG: No lower tangent could be found" if lower.nil?
-
         # Walk counterclockwise around left, clockwise around right, until the
         # next point on both sides is to the right of X->Y, showing that X->Y is
         # the highest segment.
@@ -101,8 +92,6 @@ module MB
           end
         end
 
-        raise "BUG: No upper tangent could be found" if upper.nil?
-
         return lower, upper
       end
     end
@@ -110,8 +99,6 @@ module MB
     # TODO: Do we need a Line class to represent the tangents worked on by #merge?
 
     class Point
-      include Comparable
-
       attr_reader :x, :y, :first
 
       attr_accessor :hull
@@ -155,12 +142,6 @@ module MB
         end
       end
 
-      # Returns true if the other point has the same coordinates as this point.
-      # Overrides Comparable#== because this is faster.
-      def ==(other)
-        other.x == x && other.y == y
-      end
-
       def to_s
         "#{@idx}: [#{@x}, #{@y}]{#{@neighbors.length}}"
       end
@@ -169,12 +150,10 @@ module MB
         "#<MB::Delaunay::Point:#{__id__} #{to_s}"
       end
 
-      # Returns an angle from self to +p+ from 0 to 2PI starting at the
-      # positive X axis.
+      # Returns an angle from self to +p+ from -PI to PI starting at the
+      # negative X axis.
       def angle(p)
-        a = Math.atan2(p.y - self.y, p.x - self.x)
-        #a += 2.0 * Math::PI if a < 0
-        a
+        Math.atan2(p.y - self.y, p.x - self.x)
       end
 
       # Returns the 2D cross product between the two rays +o+->+p+ and
@@ -253,11 +232,6 @@ module MB
 
       # Adds point +p+ to the correct location in this point's adjacency lists.
       def add(p, set_first = false)
-        raise "Cannot add identical point #{p.inspect} as a neighbor of #{self.inspect}" if p == self
-        raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if @pointset.include?(p.__id__)
-
-        @pointset << p.__id__
-
         angle = self.angle(p)
         prior_idx = @neighbors.bsearch_index { |n| self.angle(n) >= angle }
         @neighbors.insert(prior_idx || @neighbors.length, p)
@@ -267,10 +241,7 @@ module MB
 
       # Removes point +p+ from this point's adjacency lists.
       def remove(p)
-        raise "Point #{p} is not a neighbor of #{self}" unless @pointset.include?(p.__id__)
-
         @neighbors.delete(p)
-        @pointset.delete(p)
 
         @first = @neighbors.first if @first.equal?(p)
       end
