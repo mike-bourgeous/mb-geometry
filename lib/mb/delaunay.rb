@@ -245,6 +245,7 @@ module MB
       def add(p, set_first = false)
         angle = self.angle(p)
         prior_idx = @neighbors.bsearch_index { |n| self.angle(n) >= angle }
+        raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if prior_idx && (@neighbors[prior_idx] == p || @neighbors[prior_idx - 1] == p || @neighbors[prior_idx + 1] == p)
         @neighbors.insert(prior_idx || @neighbors.length, p)
 
         @first = p if @first.nil? || set_first
@@ -486,7 +487,7 @@ module MB
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
-      Math.sqrt(dsquared).round(12) >= Math.sqrt(rsquared).round(12)
+      dsquared.round(12) >= rsquared.round(12)
     end
 
     public

@@ -618,19 +618,21 @@ module MB
       return true if q.equal?(p1) || q.equal?(p2) || q.equal?(p3)
 
       # TODO: memoize circumcircle and relative-angle computations?
-      x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+      x, y, rsquared = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
 
-      d = Math.sqrt((q.x - x) ** 2 + (q.y - y) ** 2) if x && y && r
+      dx = q.x - x
+      dy = q.y - y
+      dsquared = dx * dx + dy * dy
 
       if $delaunay_debug
-        loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R: #{r.inspect} D: #{d.inspect} \e[1m#{d >= r}\e[0m" }
+        loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} \e[1m#{dsquared.round(12) >= rsquared.round(12)}\e[0m" }
 
-        @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: r }
+        @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: Math.sqrt(rsquared) }
         save_json # XXX
         @outside_test = nil
       end
 
-      d.round(12) >= r.round(12)
+      dsquared.round(12) >= rsquared.round(12)
     end
 
     public
@@ -660,8 +662,10 @@ module MB
       x, y = circumcenter(x1, y1, x2, y2, x3, y3)
       return nil unless x
 
-      r = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2)
-      [x, y, r]
+      dx = x - x1
+      dy = y - y1
+      rsquared = dx * dx + dy * dy
+      [x, y, rsquared]
     end
 
     # Temporarily copied here from my Geometry class in another project, to be
