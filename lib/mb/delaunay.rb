@@ -727,6 +727,8 @@ module MB
     def outside?(p1, p2, p3, q)
       loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " }
 
+      return true if q == p1 || q == p2 || q == p3
+
       # TODO: memoize circumcircle and relative-angle computations?
       x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
 
@@ -740,10 +742,7 @@ module MB
 
       binding.pry if x.nil? || y.nil? || r.nil? || q.nil? # XXX
 
-      # FIXME: this is returning false because of rounding error:
-      # X: -6.3634830897919485 Y: 0.17103413867402217 R: 5.855888311853681 D: 5.85588831185368 false
-
-      d >= r
+      d.round(12) >= r.round(12)
     end
 
     public
