@@ -1,5 +1,6 @@
 require 'matrix'
 require 'forwardable'
+require 'set'
 
 if $DEBUG || ENV['DEBUG']
   def loglog(s = nil)
@@ -67,7 +68,7 @@ module MB
         y = right.leftmost
         z = y.first
         z1 = x.first
-        z2 = x.clockwise(z1)
+        z2 = z1 && x.clockwise(z1)
         lower = nil
         max_count.times do
           if z && z.right_of?(x, y)
@@ -91,7 +92,8 @@ module MB
         # the highest segment.
         x = left.rightmost
         y = right.leftmost
-        z_r = y.clockwise(y.first)
+        z = y.first
+        z_r = z && y.clockwise(z)
         z_l = x.first
         upper = nil
         max_count.times do
@@ -120,7 +122,7 @@ module MB
     class Point
       include Comparable
 
-      attr_reader :x, :y
+      attr_reader :x, :y, :first
 
       attr_accessor :hull
 
@@ -129,8 +131,7 @@ module MB
         @y = y
         @idx = idx
 
-        @cw = {}
-        @ccw = {}
+        @pointset = Set.new
         @neighbors = []
         @first = nil
         @hull = nil
@@ -165,7 +166,7 @@ module MB
       end
 
       def to_s
-        "#{@idx}: [#{@x}, #{@y}]{#{@cw.length}}"
+        "#{@idx}: [#{@x}, #{@y}]{#{@neighbors.length}}"
       end
 
       def inspect
@@ -231,16 +232,10 @@ module MB
       # and v_ij is +p+.  This uses a Hash, while the 1980 paper mentions a
       # circular doubly-linked list.
       def clockwise(p)
-        return nil if p.nil?
-
-        # FIXME: the MERGE algorithm tries to navigate clockwise/counterclockwise from a point immediately after disconnecting it
-
-        orig_n = @cw[p] # XXX || (raise "Point #{p} is not a neighbor of #{self}")
-
-        if orig_n
-          base_idx = @neighbors.index(p)
+        if @pointset.include?(p.__id__)
+          base_idx = @neighbors.index(p) # FIXME: this is using <=> but we want __id__
         else
-          loglog { "\e[31mPoint #{p} is not a neighbor of #{self}; looking clockwise anyway...\e[0m" }
+          puts "\e[31mPoint #{p} is not a neighbor of #{self}; looking clockwise anyway...\e[0m"
           base_idx = (@neighbors.bsearch_index { |n| self.angle(n) > p.angle(p) }) % @neighbors.length
         end
 
@@ -256,8 +251,6 @@ module MB
           break if n.hull == hull || idx == base_idx
         end
 
-        loglog { "NOTE: neighbors #{n} differs from @cw #{orig_n}" } if n != orig_n # XXX
-
         n
       end
 
@@ -266,14 +259,10 @@ module MB
       #
       # Called SUCC in Lee and Schachter.
       def counterclockwise(p)
-        return nil if p.nil?
-
-        orig_n = @ccw[p] # XXX || (raise "Point #{p} is not a neighbor of #{self}")
-
-        if orig_n
-          base_idx = @neighbors.index(p)
+        if @pointset.include?(p.__id__)
+          base_idx = @neighbors.index(p) # FIXME: this is using <=> but we want __id__
         else
-          loglog { "\e[31mPoint #{p} is not a neighbor of #{self}; looking counterclockwise anyway...\e[0m" }
+          puts "\e[31mPoint #{p} is not a neighbor of #{self}; looking counterclockwise anyway...\e[0m"
           base_idx = (@neighbors.bsearch_index { |n| self.angle(n) >= p.angle(p) } - 1) % @neighbors.length
         end
 
@@ -291,145 +280,30 @@ module MB
           break if n.hull == hull || idx == base_idx
         end
 
-        loglog { "NOTE: neighbors #{n} differs from @ccw #{orig_n}" } if n != orig_n # XXX
-
         n
-      end
-
-      def first
-        # TODO: FIXME: This is wrong
-        # XXX @ccw.keys.first
-        # XXX @neighbors.first
-        @first
       end
 
       # Adds point +p+ to the correct location in this point's adjacency lists.
       def add(p, set_first = false)
         raise "Cannot add identical point #{p.inspect} as a neighbor of #{self.inspect}" if p == self
-        raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if @cw.include?(p)
-        raise "BUG: @cw and @ccw have differing lengths on #{self.inspect}" if @cw.length != @ccw.length
+        raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if @pointset.include?(p.__id__)
 
         loglog { "\e[33mInserting \e[1m#{p.inspect}\e[22m into adjacency list of \e[1m#{self.inspect}\e[0m" }
 
-        # XXX hack to get the invariants working slowly; remove this later
         @neighbors << p
+        @pointset << p.__id__
         @neighbors.sort_by! { |p| self.angle(p) } # FIXME: this doesn't prevent a neighbor in the same exact direction as another
-
-        if @cw.empty?
-          loglog { "\e[33m No existing neighbors on #{self}; #{p} is its own adjacent neighbor" } # XXX
-          @cw[p] = p
-          @ccw[p] = p
-        else
-          loglog { "\e[33m #{@cw.length} existing neighbors on #{self}; looking for the right place for #{p}\e[0m" } # XXX
-
-          # TODO: @first, and also this is O(edges per node)
-          start = first
-          ptr = first
-          ptr_next = nil
-          direction = nil
-
-          # TODO: This loop can probably be simplified; all the complication is
-          # in part to avoid just using an Array and sorting by atan2.
-          #
-          # FIXME: this does the wrong thing if the new point is on the
-          # opposite side of self from existing neighbors; maybe need to use
-          # atan2
-          loop do
-            loglog { "Checking #{self}->#{ptr} while direction is #{direction.equal?(@cw) ? 'clockwise' : (direction.equal?(@ccw) ? 'counterclockwise' : 'unknown')}" } # XXX
-            cross = p.cross(self, ptr)
-            if cross < 0
-              direction ||= @cw
-              loglog { " New point #{p} is right of #{self}->#{ptr}, moving clockwise" } # XXX
-
-              # p is to the right of self->ptr, so iterate clockwise to find surrounding neighbors
-              ptr_next = @cw[ptr]
-
-              if ptr == ptr_next || ptr_next == start || p.cross(self, ptr_next) > 0
-                loglog { "  It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" } # XXX
-                @cw[p] = ptr_next
-                @cw[ptr] = p
-                @ccw[ptr_next] = p
-                @ccw[p] = ptr
-                break
-              else
-                ptr = ptr_next
-                ptr_next = nil
-              end
-            elsif cross > 0
-              direction ||= @ccw
-              loglog { " New point #{p} is left of #{self}->#{ptr}, moving counterclockwise" } # XXX
-
-              ptr_next = @ccw[ptr]
-
-              if ptr == ptr_next || ptr_next == start || p.cross(self, ptr_next) < 0
-                loglog { " It looks like #{p} goes between #{ptr_next} and #{ptr} on #{self}" } # XXX
-                @ccw[p] = ptr_next
-                @ccw[ptr] = p
-                @cw[ptr_next] = p
-                @cw[p] = ptr
-                break
-              else
-                ptr = ptr_next
-                ptr_next = nil
-              end
-            elsif Math.atan2(ptr.y - @y, ptr.x - @x).round(3) == Math.atan2(p.y - @y, p.x - @x).round(3)
-              # This would create a zero-area triangle between self->ptr->p
-              raise "New point #{p.inspect} is in the same direction from #{self.inspect} as existing neighbor #{ptr.inspect}"
-            else
-              loglog { " New point is collinear but on opposite side of existing neighbor #{ptr}; continuing in #{direction.equal?(@cw) ? 'clockwise' : (direction.equal?(@ccw) ? 'counterclockwise' : 'unknown')} direction" }
-              direction ||= @ccw
-
-              ptr_next = direction[ptr]
-              next_cross = p.cross(self, ptr_next)
-              other_direction = direction.equal?(@cw) ? @ccw : @cw
-
-              if ptr == ptr_next || ptr_next == start || (direction == @cw && next_cross > 0) || (direction == @ccw && next_cross < 0)
-                loglog { "It looks like #{p} goes between #{ptr} and #{ptr_next} on #{self}" } # XXX
-                direction[p] = ptr_next
-                direction[ptr] = p
-                other_direction[ptr_next] = p
-                other_direction[p] = ptr
-                break
-              else
-                ptr = ptr_next
-                ptr_next = nil
-              end
-            end
-          end
-        end
-
-        # XXX hack
         @first = p if @first.nil? || set_first
-
-        if @cw.length != @ccw.length
-          loglog { " \e[1;31m@cw has length #{@cw.length} @ccw has length #{@ccw.length}\e[0m" }
-          require 'pry'
-          loglog Pry::ColorPrinter.pp({cw: @cw, ccw: @ccw}, '', 80)
-        end
       end
 
       # Removes point +p+ from this point's adjacency lists.
       def remove(p)
-        raise "BUG: Point #{p} is in only one of @cw and @ccw" if @cw.include?(p) != @ccw.include?(p)
-        raise "Point #{p} is not a neighbor of #{self}" unless @cw.include?(p) && @ccw.include?(p)
+        raise "Point #{p} is not a neighbor of #{self}" unless @pointset.include?(p.__id__)
 
         @neighbors.delete(p)
+        @pointset.delete(p)
 
-        next_cw = @cw[p]
-        next_ccw = @ccw[p]
-
-        # If +p+ is the last adjacent point, then the #delete calls below will
-        # still remove it so that case doesn't need special handling.
-
-        # Remove from cw and re-link cw
-        @cw[next_ccw] = next_cw
-        @cw.delete(p)
-
-        # Remove from ccw and re-link ccw
-        @ccw[next_cw] = next_ccw
-        @ccw.delete(p)
-
-        @first = @neighbors.first if @first == p # XXX use @ccw
+        @first = @neighbors.first if @first.equal?(p)
       end
     end
 

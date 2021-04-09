@@ -294,6 +294,8 @@ RSpec.describe(MB::Delaunay) do
       end
 
       it 'raises an error when adding a point collinear with another neighbor in the same direction' do
+        pending 'This check was removed with @cw and @ccw; it would be an expensive check'
+
         p1.add(p7)
         expect { p1.add(p9) }.to raise_error(/direction/)
 
