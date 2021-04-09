@@ -8,7 +8,12 @@ require 'pry-byebug'
 require 'json'
 
 $:.unshift(File.join(__dir__, '..', 'lib'))
-require 'mb/delaunay'
+
+if $DEBUG || ENV['DEBUG']
+  require 'mb/delaunay_debug'
+else
+  require 'mb/delaunay'
+end
 
 if ARGV.length != 1
   puts "\nUsage: \e[1m#{$0}\e[0m file_with_points_array.json (or .yml)"
@@ -30,7 +35,7 @@ end
 
 points = points[:points] if points.is_a?(Hash)
 
-t = MB::Delaunay.new(points.map { |p| [p[:x], p[:y]] })
+t = MB::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y]] })
 
 # TODO: Use MB::Sound::U.highlight after refactoring utilities elsewhere
 puts Pry::ColorPrinter.pp(
