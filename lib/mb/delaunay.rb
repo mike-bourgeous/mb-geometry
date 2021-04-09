@@ -305,7 +305,7 @@ module MB
       # Adds point +p+ to the correct location in this point's adjacency lists.
       def add(p, set_first = false)
         raise "Cannot add identical point #{p.inspect} as a neighbor of #{self.inspect}" if p == self
-        raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if @cw.include?(p) || @ccw.include?(p) || @neighbors.include?(p)
+        raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if @cw.include?(p)
         raise "BUG: @cw and @ccw have differing lengths on #{self.inspect}" if @cw.length != @ccw.length
 
         loglog { "\e[33mInserting \e[1m#{p.inspect}\e[22m into adjacency list of \e[1m#{self.inspect}\e[0m" }
