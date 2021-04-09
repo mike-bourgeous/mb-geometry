@@ -657,15 +657,11 @@ module MB
     # Returns the circumcircle of the triangle defined by the given three
     # points as [x, y, r].  Returns nil if the points are collinear.
     def self.circumcircle(x1, y1, x2, y2, x3, y3)
-      @@ccl_memo ||= {}
-      key = [ [x1, y1], [x2, y2], [x3, y3] ].sort!
-
-      v = @@ccl_memo[key]
-      return v if v
-
       x, y = circumcenter(x1, y1, x2, y2, x3, y3)
-      r = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2) if x
-      [x, y, r].tap { |v| @@ccl_memo[key] = v }
+      return nil unless x
+
+      r = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2)
+      [x, y, r]
     end
 
     # Temporarily copied here from my Geometry class in another project, to be
