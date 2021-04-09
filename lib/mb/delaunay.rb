@@ -19,6 +19,8 @@ module MB
         @hull_id = @@hull_id
         @@hull_id += 1
 
+        puts "Created hull #{@hull_id}" # XXX
+
         @points = points.dup
         @leftmost = points.first
         @rightmost = points.last
@@ -27,8 +29,9 @@ module MB
       end
 
       def add_hull(h)
+        puts "Adding hull #{h.hull_id} with #{h.count} to hull #{@hull_id} with #{@points.length}" # XXX
         @rightmost = h.rightmost
-        points.concat(h.points)
+        @points.concat(h.points)
 
         h.points.each do |p| p.hull = self end
 
@@ -407,6 +410,10 @@ module MB
     #
     # Called MERGE in Lee and Schachter.
     def merge(left, right)
+      puts "Merging right hull #{right.hull_id} with #{right.count} into left hull #{left.hull_id} with #{left.count}" # XXX
+
+      require 'pry-byebug'; binding.pry if right.hull_id == 52 && left.hull_id == 51 # XXX
+
       (l_l, l_r), (u_l, u_r) = left.tangents(right)
 
       l = l_l

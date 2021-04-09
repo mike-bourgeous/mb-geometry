@@ -6,6 +6,7 @@ require 'pry'
 require 'pry-byebug'
 
 require 'json'
+require 'benchmark'
 
 $:.unshift(File.join(__dir__, '..', 'lib'))
 
@@ -35,7 +36,12 @@ end
 
 points = points[:points] if points.is_a?(Hash)
 
-t = MB::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y]] })
+t = nil
+elapsed = Benchmark.realtime do
+  t = MB::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y]] })
+end
+
+puts "Triangulated \e[1m#{points.length}\e[0m points in \e[1m#{elapsed}\e[0m seconds."
 
 # TODO: Use MB::Sound::U.highlight after refactoring utilities elsewhere
 puts Pry::ColorPrinter.pp(
