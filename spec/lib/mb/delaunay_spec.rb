@@ -281,6 +281,7 @@ RSpec.describe(MB::Delaunay) do
       end
 
       it 'raises an error when adding an identical point to itself' do
+        pending 'This condition was removed for performance reasons'
         expect { p2.add(MB::Delaunay::Point.new(p2.x, p2.y)) }.to raise_error(/identical/)
       end
 
@@ -396,17 +397,17 @@ RSpec.describe(MB::Delaunay) do
 
   describe '#points' do
     it 'returns points in sorted order' do
-      expect(trivial3.points).to eq([
-        MB::Delaunay::Point.new(-1, -1),
-        MB::Delaunay::Point.new(0, 1),
-        MB::Delaunay::Point.new(1, -1),
+      expect(trivial3.points.map { |p| [p.x, p.y] }).to eq([
+        [-1, -1],
+        [0, 1],
+        [1, -1],
       ])
 
-      expect(trivial4.points).to eq([
-        MB::Delaunay::Point.new(-1, -1),
-        MB::Delaunay::Point.new(0.5, 0),
-        MB::Delaunay::Point.new(1, -1),
-        MB::Delaunay::Point.new(1, 1),
+      expect(trivial4.points.map { |p| [p.x, p.y] }).to eq([
+        [-1, -1],
+        [0.5, 0],
+        [1, -1],
+        [1, 1],
       ])
     end
   end
