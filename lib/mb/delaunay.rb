@@ -312,7 +312,6 @@ module MB
     # MB::Delaunay::Point#neighbors method to access the neighbor graph after
     # construction.
     def initialize(points)
-      points.sort! # XXX
       @points = points.map.with_index { |(x, y), idx| Point.new(x, y, idx) }
       @points.sort! # Point implements <=> to sort by X and break ties by Y
       @outside_test = nil
