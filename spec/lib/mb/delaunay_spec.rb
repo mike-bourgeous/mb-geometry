@@ -263,7 +263,6 @@ RSpec.describe(MB::Delaunay) do
           points = instance_exec(&pts)
 
           points.each_with_index do |p, idx|
-            loglog "\e[32mAdding point #{p}, index #{idx}\e[0m" # XXX
             p1.add(p)
           end
 

@@ -2,6 +2,17 @@ require 'matrix'
 require 'forwardable'
 require 'set'
 
+if $DEBUG || ENV['DEBUG']
+  $delaunay_debug = true
+  def loglog(s = nil)
+    s = yield if block_given?
+    puts "#{' ' * caller.length}#{s}"
+  end
+else
+  $delaunay_debug = false
+  def loglog(s=nil); end
+end
+
 module MB
   # Pure Ruby Delaunay triangulation.
   class Delaunay
@@ -134,6 +145,7 @@ module MB
 
       # Sets a name for this point (+n+ will be prefixed by the point's index).
       def name=(n)
+        return # XXX
         if n.nil?
           @name = nil
         else
@@ -203,7 +215,23 @@ module MB
       end
 
       def neighbors
-        @neighbors.dup
+        @neighbors.dup # XXX replace with @cw.keys??
+      end
+
+      # XXX
+      def neighbors_clockwise
+        return @cw.keys if @cw.length == 1
+
+        start = @cw.keys.first
+        ptr = @cw[start]
+        arr = [start]
+
+        while ptr != start
+          arr << ptr
+          ptr = @cw[ptr]
+        end
+
+        arr
       end
 
       # Returns the next clockwise neighbor to this point from point +p+.
@@ -221,7 +249,7 @@ module MB
           # a proper fix for the point-walk ending up on the wrong hull, or if
           # it causes new problems
           idx = (idx - 1) % @neighbors.length
-          n = @neighbors[idx]
+          n = @neighbors[idx] # XXX FIXME hack to get this working
 
           break if n.hull == hull || idx == base_idx
         end
@@ -242,8 +270,8 @@ module MB
           # Skip newly added neighbors during a hull merge; not sure if this is
           # a proper fix for the point-walk ending up on the wrong hull, or if
           # it causes new problems
-          idx = (idx + 1) % @neighbors.length
-          n = @neighbors[idx]
+          idx = (idx + 1) % @neighbors.length # FIXME not sure if this is the right offset in the case of bsearch
+          n = @neighbors[idx] # XXX FIXME hack to get this working
 
           break if n.hull == hull || idx == base_idx
         end
@@ -255,6 +283,8 @@ module MB
       def add(p, set_first = false)
         raise "Cannot add identical point #{p.inspect} as a neighbor of #{self.inspect}" if p == self
         raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if @pointset.include?(p.__id__)
+
+        loglog { "\e[33mInserting \e[1m#{p.inspect}\e[22m into adjacency list of \e[1m#{self.inspect}\e[0m" }
 
         @pointset << p.__id__
 
@@ -287,6 +317,8 @@ module MB
     def initialize(points)
       @points = points.map.with_index { |(x, y), idx| Point.new(x, y, idx) }
       @points.sort! # Point implements <=> to sort by X and break ties by Y
+      @outside_test = nil
+      @tangents = nil
       triangulate(@points)
     end
 
@@ -320,7 +352,25 @@ module MB
     end
 
     def to_h
-      { points: self.to_a }
+      { points: self.to_a, outside_test: @outside_test, tangents: @tangents }
+    end
+
+    if $DEBUG || ENV['DEBUG']
+      require 'json'
+      def save_json
+        @json_idx ||= 0
+
+        @last_json ||= nil
+        this_json = to_h
+        if @last_json != this_json
+          loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
+          File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))
+          @json_idx += 1
+          @last_json = this_json
+        end
+      end
+    else
+      def save_json; end
     end
 
     private
@@ -329,18 +379,28 @@ module MB
     #
     # Analogous to INSERT(A, B) from Lee and Schachter.
     def join(p1, p2, set_first)
+      loglog { "\e[32mConnecting \e[1m#{p1}\e[22m to \e[1m#{p2}\e[0m" }
       p1.add(p2, set_first)
       p2.add(p1)
+
+      save_json # XXX
     end
 
     # Analogous to DELETE(A, B) from Lee and Schachter.
     def unjoin(p1, p2, whence = nil)
+      loglog { "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[22m #{whence}\e[0m" }
       p1.remove(p2)
       p2.remove(p1)
+
+      save_json # XXX
     end
 
     # Pass a sorted list of points.
     def triangulate(points)
+      loglog { "\e[34mTriangulating \e[1m#{points.length}\e[22m points\e[0m" }
+
+      save_json # XXX
+
       case points.length
       when 0
         raise "No points were given to triangulate"
@@ -362,6 +422,7 @@ module MB
         # Connect points to each other in counterclockwise order
         cross = p2.cross(p1, p3)
         if cross < 0
+          loglog { " p1 -> p2 -> p3" }
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
           p2.add(p3)
@@ -371,6 +432,7 @@ module MB
           p2.add(p1)
           p1.add(p3)
         elsif cross > 0
+          loglog { " p1 -> p3 -> p2" }
           # p2 is left of p1->p3; put p2 on the top
           p1.add(p3)
           p3.add(p2)
@@ -381,6 +443,7 @@ module MB
           p3.add(p1)
         else
           # p2 is on a line between p1 and p3; link left-to-right
+          loglog { " p1 -> p2 ; p2 -> p3" }
           p1.add(p2)
           p2.add(p3)
 
@@ -396,8 +459,13 @@ module MB
         left = points[0...n]
         right = points[n..-1]
 
+        loglog { "\e[36mSplitting into \e[1m#{left.length}\e[22m and \e[1m#{right.length}\e[22m points...\e[0m" }
+
         merge(triangulate(left), triangulate(right))
       end
+
+    ensure
+      save_json # XXX
     end
 
     # Merges two convex hulls that contain locally complete Delaunay
@@ -405,7 +473,33 @@ module MB
     #
     # Called MERGE in Lee and Schachter.
     def merge(left, right)
+      loglog { "\e[35mMerging \e[1m#{left.length}\e[22m points on the left with \e[1m#{right.length}\e[22m points on the right\e[0m" }
+
       (l_l, l_r), (u_l, u_r) = left.tangents(right)
+
+      if $delaunay_debug
+        @tangents = [
+          [[l_l.x, l_l.y], [l_r.x, l_r.y]],
+          [[u_l.x, u_l.y], [u_r.x, u_r.y]],
+        ]
+
+        loglog { "\e[36mTangents are \e[1m#{l_l} -> #{l_r}\e[22m and \e[1m#{u_l} -> #{u_r}\e[0m" }
+      end
+
+      # XXX
+      # TODO a name stack would be better, so U_R can become R2 and go back to U_R
+      if $delaunay_debug
+        l_l.name = 'L_L'
+        l_r.name = 'L_R'
+        u_l.name = 'U_L'
+        u_r.name = 'U_R'
+
+        save_json # XXX
+
+        l_l.name = 'L'
+        l_r.name = 'R'
+        save_json
+      end
 
       l = l_l
       r = l_r
@@ -422,30 +516,62 @@ module MB
         join(l, r, l == l_l && r == l_r)
 
         r1 = r.clockwise(l)
+        r1.name = 'R1'
         if r1.left_of?(l, r)
+          r2&.name = nil
           r2 = r.clockwise(r1)
+          r2.name = 'R2'
+
+          save_json # XXX
 
           until outside?(r1, l, r, r2)
             unjoin(r, r1, 'from the right')
+
+            r1&.name = nil
+            r2&.name = nil
+
             r1 = r2
+            r1.name = 'R1'
+
             r2 = r.clockwise(r1)
+            r2.name = 'R2'
+
+            save_json
           end
         else
           a = true
         end
 
+        l1&.name = nil
         l1 = l.counterclockwise(r)
+        l1.name = 'L1'
         if l1.right_of?(r, l)
+          l2&.name = nil
           l2 = l.counterclockwise(l1)
+          l2.name = 'L2'
+
+          save_json # XXX
 
           until outside?(l, r, l1, l2)
             unjoin(l, l1, 'from the left')
+
+            l1&.name = nil
+            l2&.name = nil
+
             l1 = l2
+            l1.name = 'L1'
+
             l2 = l.counterclockwise(l1)
+            l2.name = 'L2'
+
+            save_json
           end
         else
           b = true
         end
+
+        l&.name = nil
+        r&.name = nil
 
         if a
           l = l1
@@ -456,6 +582,11 @@ module MB
         else
           l = l1
         end
+
+        l.name = 'L'
+        r.name = 'R'
+
+        save_json # XXX
       end
 
       # Add the top tangent; this seems to be omitted from Lee and Schachter,
@@ -463,7 +594,18 @@ module MB
       # and runs one final iteration.
       join(u_r, u_l, true)
 
-      left.add_hull(right)
+      save_json # XXX
+
+      left.points.each do |p|
+        p.name = nil
+      end
+      right.points.each do |p|
+        p.name = nil
+      end
+
+      @tangents = nil
+
+      left.add_hull(right).tap { save_json }
     end
 
     # Returns true if the query point +q+ is not inside the circumcircle
@@ -471,11 +613,22 @@ module MB
     #
     # Analogous to QTEST(H, I, J, K) in Lee and Schachter.
     def outside?(p1, p2, p3, q)
+      loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " } if $delaunay_debug
+
       return true if q.equal?(p1) || q.equal?(p2) || q.equal?(p3)
 
+      # TODO: memoize circumcircle and relative-angle computations?
       x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
 
       d = Math.sqrt((q.x - x) ** 2 + (q.y - y) ** 2) if x && y && r
+
+      if $delaunay_debug
+        loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R: #{r.inspect} D: #{d.inspect} \e[1m#{d >= r}\e[0m" }
+
+        @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: r }
+        save_json # XXX
+        @outside_test = nil
+      end
 
       d.round(12) >= r.round(12)
     end
