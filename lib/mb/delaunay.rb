@@ -691,10 +691,11 @@ module MB
       a, b, c = line1
       d, e, f = line2
 
-      # Detect coincident and parallel lines
-      return nil if (b * d - a * e) == 0
-
       denom = (b * d - a * e).to_f
+
+      # Detect coincident and parallel lines
+      return nil if denom == 0
+
       x = (b * f - c * e) / denom
       y = (c * d - a * f) / denom
 
