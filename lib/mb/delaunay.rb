@@ -132,7 +132,6 @@ module MB
 
         @pointset = Set.new
         @neighbors = []
-        @angles = {}
         @first = nil
         @hull = nil
         @name = nil
@@ -182,11 +181,9 @@ module MB
       # Returns an angle from self to +p+ from 0 to 2PI starting at the
       # positive X axis.
       def angle(p)
-        @angles[p.__id__] ||= (
-          a = Math.atan2(p.y - self.y, p.x - self.x)
-          a += 2.0 * Math::PI if a < 0
-          a
-        )
+        a = Math.atan2(p.y - self.y, p.x - self.x)
+        a += 2.0 * Math::PI if a < 0
+        a
       end
 
       # Returns the 2D cross product between the two rays +o+->+p+ and
@@ -240,12 +237,7 @@ module MB
       # and v_ij is +p+.  This uses a Hash, while the 1980 paper mentions a
       # circular doubly-linked list.
       def clockwise(p)
-        if @pointset.include?(p.__id__)
-        #  base_idx = @neighbors.index(p) # FIXME: this is using <=> but we want __id__
-        #else
-        #  puts "\e[31mPoint #{p} is not a neighbor of #{self}; looking clockwise anyway...\e[0m"
-          base_idx = @neighbors.bsearch_index { |n| self.angle(n).round(10) - self.angle(p).round(10) }
-        end
+        base_idx = @neighbors.index(p) # FIXME: this is using <=> but we want __id__
 
         idx = base_idx
         n = nil
@@ -267,18 +259,11 @@ module MB
       #
       # Called SUCC in Lee and Schachter.
       def counterclockwise(p)
-        if @pointset.include?(p.__id__)
-        #  base_idx = @neighbors.index(p) # FIXME: this is using <=> but we want __id__
-        #else
-        #  puts "\e[31mPoint #{p} is not a neighbor of #{self}; looking counterclockwise anyway...\e[0m"
-          base_idx = @neighbors.bsearch_index { |n| self.angle(n).round(10) - self.angle(p).round(10) }
-        end
+        base_idx = @neighbors.index(p) # FIXME: this is using <=> but we want __id__
 
         idx = base_idx
         n = nil
         loop do
-          loglog { "Checking idx #{idx}" } # XXX
-
           # Skip newly added neighbors during a hull merge; not sure if this is
           # a proper fix for the point-walk ending up on the wrong hull, or if
           # it causes new problems
