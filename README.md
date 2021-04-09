@@ -26,14 +26,12 @@ Guibas and Stolfi, which the ACM still charges for and thus I have not read.
 - It's not really clear how the FIRST function is supposed to operate.  I'm
   just manually marking an edge as "first" when I know it's part of a convex
   hull.
+- Rounding error on the circumcircle distance comparison can cause
+  triangulation to fail, if not accounted for.  This implementation rounds to a
+  fixed number of decimal places as a partial workaround.
 
 ## References
 
 - [Lee and Schachter, 1980](http://www.personal.psu.edu/cxc11/AERSP560/DELAUNEY/13_Two_algorithms_Delauney.pdf)
 - [Computing constrained Delaunay triangulations](https://web.archive.org/web/20170922181219/http://www.geom.uiuc.edu/~samuelp/del_project.html)
 - https://en.wikipedia.org/wiki/Delaunay_triangulation
-
-
-## Testing
-
-- `bin/delaunay_bench.rb` crashes at 13 but works at 12 points
