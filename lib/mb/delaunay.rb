@@ -728,7 +728,7 @@ module MB
     def outside?(p1, p2, p3, q)
       loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " }
 
-      return true if q == p1 || q == p2 || q == p3
+      return true if q.equal?(p1) || q.equal?(p2) || q.equal?(p3)
 
       # TODO: memoize circumcircle and relative-angle computations?
       x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
