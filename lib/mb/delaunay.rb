@@ -412,8 +412,6 @@ module MB
     def merge(left, right)
       puts "Merging right hull #{right.hull_id} with #{right.count} into left hull #{left.hull_id} with #{left.count}" # XXX
 
-      require 'pry-byebug'; binding.pry if right.hull_id == 52 && left.hull_id == 51 # XXX
-
       (l_l, l_r), (u_l, u_r) = left.tangents(right)
 
       l = l_l
@@ -488,7 +486,7 @@ module MB
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
-      dsquared.round(12) >= rsquared.round(12)
+      Math.sqrt(dsquared).round(12) >= Math.sqrt(rsquared).round(12)
     end
 
     public
