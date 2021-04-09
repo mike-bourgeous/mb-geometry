@@ -39,7 +39,6 @@ module MB
         @leftmost = h.leftmost if @leftmost.nil? || h.leftmost < @leftmost
         @rightmost = h.rightmost if @rightmost.nil? || h.rightmost > @rightmost
         points.concat(h.points)
-        points.sort! # TODO: If +h+ is always right of self, then this sort is unnecessary
 
         h.points.each do |p| p.hull = self end
 
