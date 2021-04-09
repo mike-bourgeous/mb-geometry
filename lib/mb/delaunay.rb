@@ -473,11 +473,11 @@ module MB
     def outside?(p1, p2, p3, q)
       return true if q.equal?(p1) || q.equal?(p2) || q.equal?(p3)
 
-      x, y, r = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+      x, y, rsquared = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
 
-      d = Math.sqrt((q.x - x) ** 2 + (q.y - y) ** 2) if x && y && r
+      dsquared = (q.x - x) ** 2 + (q.y - y) ** 2
 
-      d.round(12) >= r.round(12)
+      dsquared.round(12) >= rsquared.round(12)
     end
 
     public
@@ -502,13 +502,13 @@ module MB
     # Temporarily copied here from my Geometry class in another project, to be
     # merged eventually.
     # Returns the circumcircle of the triangle defined by the given three
-    # points as [x, y, r].  Returns nil if the points are collinear.
+    # points as [x, y, rsquared].  Returns nil if the points are collinear.
     def self.circumcircle(x1, y1, x2, y2, x3, y3)
       x, y = circumcenter(x1, y1, x2, y2, x3, y3)
       return nil unless x
 
-      r = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2)
-      [x, y, r]
+      rsquared = (x - x1) ** 2 + (y - y1) ** 2
+      [x, y, rsquared]
     end
 
     # Temporarily copied here from my Geometry class in another project, to be
