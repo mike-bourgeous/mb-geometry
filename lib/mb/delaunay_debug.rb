@@ -638,15 +638,17 @@ module MB
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
+      outside = dsquared.round(9) >= rsquared.round(9)
+
       if $delaunay_debug
-        Delaunay.loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} \e[1m#{dsquared.round(12) >= rsquared.round(12)}\e[0m" }
+        Delaunay.loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} \e[1m#{outside}\e[0m" }
 
         @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: Math.sqrt(rsquared) }
         Delaunay.save_json
         @outside_test = nil
       end
 
-      dsquared.round(9) >= rsquared.round(9)
+      outside
     end
 
     public
