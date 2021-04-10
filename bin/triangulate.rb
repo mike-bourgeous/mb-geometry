@@ -38,7 +38,7 @@ points = points[:points] if points.is_a?(Hash)
 
 t = nil
 elapsed = Benchmark.realtime do
-  t = MB::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y]] })
+  t = MB::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y], p[:name]] })
 end
 
 puts "Triangulated \e[1m#{points.length}\e[0m points in \e[1m#{elapsed}\e[0m seconds."

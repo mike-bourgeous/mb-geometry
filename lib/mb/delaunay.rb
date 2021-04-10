@@ -265,9 +265,11 @@ module MB
     # MB::Delaunay::Point#neighbors method to access the neighbor graph after
     # construction.
     def initialize(points)
-      @points = points.map.with_index { |(x, y), idx| Point.new(x, y, idx) }
-      @points.sort! # Point implements <=> to sort by X and break ties by Y
-      triangulate(@points)
+      @points = points.map.with_index { |(x, y, name), idx|
+        Point.new(x, y, idx).tap { |p| p.name = name if name }
+      }
+      @sorted_points = @points.sort # Point implements <=> to sort by X and break ties by Y
+      triangulate(@sorted_points)
     end
 
     # TODO: methods for adding and removing individual points, using a fast
@@ -306,7 +308,8 @@ module MB
     def triangles
       traversed = Set.new
       triangles = Set.new
-      @points.each do |p|
+
+      @sorted_points.each do |p|
         p.neighbors.each do |n|
           key = n > p ? [p, n] : [n, p]
           next if traversed.include?(key)

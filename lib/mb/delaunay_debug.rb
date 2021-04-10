@@ -314,11 +314,13 @@ module MB
     # MB::Delaunay::Point#neighbors method to access the neighbor graph after
     # construction.
     def initialize(points)
-      @points = points.map.with_index { |(x, y), idx| Point.new(x, y, idx) }
-      @points.sort! # Point implements <=> to sort by X and break ties by Y
+      @points = points.map.with_index { |(x, y, name), idx|
+        Point.new(x, y, idx).tap { |p| p.name = name if name }
+      }
+      @sorted_points = @points.sort # Point implements <=> to sort by X and break ties by Y
       @outside_test = nil
       @tangents = nil
-      triangulate(@points)
+      triangulate(@sorted_points)
     end
 
     # TODO: methods for adding and removing individual points, using a fast
@@ -327,7 +329,7 @@ module MB
     # TODO: methods for retrieving a set of triangles, not just points/edges
 
     def to_a
-      @points.map { |p|
+      @sorted_points.map { |p|
         if p.hull.nil?
           c = nil
         else
