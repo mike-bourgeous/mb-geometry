@@ -99,7 +99,7 @@ module MB
     # TODO: Do we need a Line class to represent the tangents worked on by #merge?
 
     class Point
-      attr_reader :x, :y, :first
+      attr_reader :x, :y, :first, :idx
 
       attr_accessor :hull
 

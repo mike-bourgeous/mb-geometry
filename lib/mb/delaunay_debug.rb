@@ -123,7 +123,7 @@ module MB
     class Point
       include Comparable
 
-      attr_reader :x, :y, :first
+      attr_reader :x, :y, :first, :idx
 
       attr_accessor :hull
 
