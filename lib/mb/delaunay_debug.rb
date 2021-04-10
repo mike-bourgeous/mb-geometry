@@ -1,21 +1,36 @@
 require 'matrix'
 require 'forwardable'
 require 'set'
+require 'json'
 
 if $DEBUG || ENV['DEBUG']
   $delaunay_debug = true
-  def loglog(s = nil)
-    s = yield if block_given?
-    puts "#{' ' * caller.length}#{s}"
-  end
 else
   $delaunay_debug = false
-  def loglog(s=nil); end
 end
 
 module MB
   # Pure Ruby Delaunay triangulation.
   class Delaunay
+    def self.loglog(s = nil)
+      return unless $delaunay_debug
+
+      s = yield if block_given?
+      puts "#{' ' * caller.length}#{s}"
+      @@log_msg = s.gsub(/\e\[[0-9;]*[^0-9;]/, '')
+      save_json unless s.include?('JSON')
+    end
+
+    def self.save_json
+      return unless $delaunay_debug
+
+      @@instance&.save_json(log: @@log_msg)
+    end
+
+    def self.set_instance(d)
+      @@instance = d
+    end
+
     class Hull
       extend Forwardable
 
@@ -283,7 +298,7 @@ module MB
         raise "Cannot add identical point #{p.inspect} as a neighbor of #{self.inspect}" if p == self
         raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if @pointset.include?(p.__id__)
 
-        loglog { "\e[33mInserting \e[1m#{p.inspect}\e[22m into adjacency list of \e[1m#{self.inspect}\e[0m" }
+        Delaunay.loglog { "\e[33mInserting \e[1m#{p.inspect}\e[22m into adjacency list of \e[1m#{self.inspect}\e[0m" }
 
         @pointset << p.__id__
 
@@ -314,6 +329,8 @@ module MB
     # MB::Delaunay::Point#neighbors method to access the neighbor graph after
     # construction.
     def initialize(points)
+      Delaunay.set_instance(self)
+
       @points = points.map.with_index { |(x, y, name), idx|
         Point.new(x, y, idx).tap { |p| p.name = name if name }
       }
@@ -356,22 +373,17 @@ module MB
       { points: self.to_a, outside_test: @outside_test, tangents: @tangents }
     end
 
-    if $DEBUG || ENV['DEBUG']
-      require 'json'
-      def save_json
-        @json_idx ||= 0
+    def save_json(h = {})
+      @json_idx ||= 0
 
-        @last_json ||= nil
-        this_json = to_h
-        if @last_json != this_json
-          loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
-          File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))
-          @json_idx += 1
-          @last_json = this_json
-        end
+      @last_json ||= nil
+      this_json = h.merge(to_h)
+      if @last_json != this_json
+        Delaunay.loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
+        File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))
+        @json_idx += 1
+        @last_json = this_json
       end
-    else
-      def save_json; end
     end
 
     private
@@ -380,27 +392,28 @@ module MB
     #
     # Analogous to INSERT(A, B) from Lee and Schachter.
     def join(p1, p2, set_first)
-      loglog { "\e[32mConnecting \e[1m#{p1}\e[22m to \e[1m#{p2}\e[0m" }
+      Delaunay.loglog { "\e[32mConnecting \e[1m#{p1}\e[22m to \e[1m#{p2}\e[0m" }
       p1.add(p2, set_first)
       p2.add(p1)
 
-      save_json # XXX
+      Delaunay.save_json
     end
 
     # Analogous to DELETE(A, B) from Lee and Schachter.
     def unjoin(p1, p2, whence = nil)
-      loglog { "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[22m #{whence}\e[0m" }
+      Delaunay.loglog { "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[22m #{whence}\e[0m" }
+
       p1.remove(p2)
       p2.remove(p1)
 
-      save_json # XXX
+      Delaunay.save_json
     end
 
     # Pass a sorted list of points.
     def triangulate(points)
-      loglog { "\e[34mTriangulating \e[1m#{points.length}\e[22m points\e[0m" }
+      Delaunay.loglog { "\e[34mTriangulating \e[1m#{points.length}\e[22m points\e[0m" }
 
-      save_json # XXX
+      Delaunay.save_json
 
       case points.length
       when 0
@@ -423,7 +436,7 @@ module MB
         # Connect points to each other in counterclockwise order
         cross = p2.cross(p1, p3)
         if cross < 0
-          loglog { " p1 -> p2 -> p3" }
+          Delaunay.loglog { " p1 -> p2 -> p3" }
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
           p2.add(p3)
@@ -433,7 +446,7 @@ module MB
           p2.add(p1)
           p1.add(p3)
         elsif cross > 0
-          loglog { " p1 -> p3 -> p2" }
+          Delaunay.loglog { " p1 -> p3 -> p2" }
           # p2 is left of p1->p3; put p2 on the top
           p1.add(p3)
           p3.add(p2)
@@ -444,7 +457,7 @@ module MB
           p3.add(p1)
         else
           # p2 is on a line between p1 and p3; link left-to-right
-          loglog { " p1 -> p2 ; p2 -> p3" }
+          Delaunay.loglog { " p1 -> p2 ; p2 -> p3" }
           p1.add(p2)
           p2.add(p3)
 
@@ -460,13 +473,13 @@ module MB
         left = points[0...n]
         right = points[n..-1]
 
-        loglog { "\e[36mSplitting into \e[1m#{left.length}\e[22m and \e[1m#{right.length}\e[22m points...\e[0m" }
+        Delaunay.loglog { "\e[36mSplitting into \e[1m#{left.length}\e[22m and \e[1m#{right.length}\e[22m points...\e[0m" }
 
         merge(triangulate(left), triangulate(right))
       end
 
     ensure
-      save_json # XXX
+      Delaunay.save_json
     end
 
     # Merges two convex hulls that contain locally complete Delaunay
@@ -474,7 +487,7 @@ module MB
     #
     # Called MERGE in Lee and Schachter.
     def merge(left, right)
-      loglog { "\e[35mMerging \e[1m#{left.length}\e[22m points on the left with \e[1m#{right.length}\e[22m points on the right\e[0m" }
+      Delaunay.loglog { "\e[35mMerging \e[1m#{left.length}\e[22m points on the left with \e[1m#{right.length}\e[22m points on the right\e[0m" }
 
       (l_l, l_r), (u_l, u_r) = left.tangents(right)
 
@@ -484,7 +497,7 @@ module MB
           [[u_l.x, u_l.y], [u_r.x, u_r.y]],
         ]
 
-        loglog { "\e[36mTangents are \e[1m#{l_l} -> #{l_r}\e[22m and \e[1m#{u_l} -> #{u_r}\e[0m" }
+        Delaunay.loglog { "\e[36mTangents are \e[1m#{l_l} -> #{l_r}\e[22m and \e[1m#{u_l} -> #{u_r}\e[0m" }
       end
 
       # XXX
@@ -495,11 +508,11 @@ module MB
         u_l.name = 'U_L'
         u_r.name = 'U_R'
 
-        save_json # XXX
+        Delaunay.save_json
 
         l_l.name = 'L'
         l_r.name = 'R'
-        save_json
+        Delaunay.save_json
       end
 
       l = l_l
@@ -523,7 +536,7 @@ module MB
           r2 = r.clockwise(r1)
           r2.name = 'R2'
 
-          save_json # XXX
+          Delaunay.save_json
 
           until outside?(r1, l, r, r2)
             unjoin(r, r1, 'from the right')
@@ -537,7 +550,7 @@ module MB
             r2 = r.clockwise(r1)
             r2.name = 'R2'
 
-            save_json
+            Delaunay.save_json
           end
         else
           a = true
@@ -551,7 +564,7 @@ module MB
           l2 = l.counterclockwise(l1)
           l2.name = 'L2'
 
-          save_json # XXX
+          Delaunay.save_json
 
           until outside?(l, r, l1, l2)
             unjoin(l, l1, 'from the left')
@@ -565,7 +578,7 @@ module MB
             l2 = l.counterclockwise(l1)
             l2.name = 'L2'
 
-            save_json
+            Delaunay.save_json
           end
         else
           b = true
@@ -587,7 +600,7 @@ module MB
         l.name = 'L'
         r.name = 'R'
 
-        save_json # XXX
+        Delaunay.save_json
       end
 
       # Add the top tangent; this seems to be omitted from Lee and Schachter,
@@ -595,7 +608,7 @@ module MB
       # and runs one final iteration.
       join(u_r, u_l, true)
 
-      save_json # XXX
+      Delaunay.save_json
 
       left.points.each do |p|
         p.name = nil
@@ -614,7 +627,7 @@ module MB
     #
     # Analogous to QTEST(H, I, J, K) in Lee and Schachter.
     def outside?(p1, p2, p3, q)
-      loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " } if $delaunay_debug
+      Delaunay.loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " } if $delaunay_debug
 
       return true if q.equal?(p1) || q.equal?(p2) || q.equal?(p3)
 
@@ -626,10 +639,10 @@ module MB
       dsquared = dx * dx + dy * dy
 
       if $delaunay_debug
-        loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} \e[1m#{dsquared.round(12) >= rsquared.round(12)}\e[0m" }
+        Delaunay.loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} \e[1m#{dsquared.round(12) >= rsquared.round(12)}\e[0m" }
 
         @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: Math.sqrt(rsquared) }
-        save_json # XXX
+        Delaunay.save_json
         @outside_test = nil
       end
 
