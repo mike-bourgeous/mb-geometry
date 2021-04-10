@@ -128,8 +128,8 @@ module MB
       attr_accessor :hull
 
       def initialize(x, y, idx = nil)
-        @x = x
-        @y = y
+        @x = x.round(9)
+        @y = y.round(9)
         @idx = idx
 
         @pointset = Set.new
