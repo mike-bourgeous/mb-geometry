@@ -180,13 +180,13 @@ module MB
       # https://en.wikipedia.org/wiki/Cross_product#Computational_geometry
       # https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
       def right_of?(p1, p2)
-        cross(p1, p2) < 0
+        cross(p1, p2).round(6) < 0
       end
 
       # Returns true if this point is to the left of the ray from +p1+ to +p2+.
       # Returns false if right or collinear.
       def left_of?(p1, p2)
-        cross(p1, p2) > 0
+        cross(p1, p2).round(6) > 0
       end
 
       def neighbors
@@ -368,7 +368,7 @@ module MB
         p1, p2, p3 = points
 
         # Connect points to each other in counterclockwise order
-        cross = p2.cross(p1, p3)
+        cross = p2.cross(p1, p3).round(4)
         if cross < 0
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
@@ -472,6 +472,17 @@ module MB
       join(u_r, u_l, true)
 
       left.add_hull(right)
+
+    rescue => e
+      f = "/tmp/hull_#{left.hull_id}_#{right.hull_id}.json"
+      File.write(
+        f,
+        JSON.pretty_generate(
+          (left.points + right.points).map { |p| [p.x, p.y, p.idx] }
+        )
+      )
+
+      raise "Merging failed: #{e}.  Wrote #{f} to debug."
     end
 
     # Returns true if the query point +q+ is not inside the circumcircle
