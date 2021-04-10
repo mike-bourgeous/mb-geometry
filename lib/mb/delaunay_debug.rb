@@ -145,11 +145,10 @@ module MB
 
       # Sets a name for this point (+n+ will be prefixed by the point's index).
       def name=(n)
-        return # XXX
         if n.nil?
-          @name = nil
+          @name = "#{@hull&.hull_id}/#{@idx}"
         else
-          @name = "#{@idx}: #{n}"
+          @name = "#{@hull&.hull_id}/#{@idx}: #{n}"
         end
       end
 

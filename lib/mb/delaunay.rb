@@ -276,7 +276,7 @@ module MB
     # TODO: methods for retrieving a set of triangles, not just points/edges
 
     def to_a
-      @points.map { |p|
+      @sorted_points.map { |p|
         if p.hull.nil?
           c = nil
         else
