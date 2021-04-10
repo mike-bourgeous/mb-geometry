@@ -17,14 +17,16 @@ module MB
 
       s = yield if block_given?
       puts "#{' ' * caller.length}#{s}"
-      @@log_msg = s.gsub(/\e\[[0-9;]*[^0-9;]/, '')
-      save_json unless s.include?('JSON')
+      unless s.include?('Writing JSON')
+        @@log_msg = s.gsub(/\e\[[0-9;]*[^0-9;]/, '')
+        save_json
+      end
     end
 
     def self.save_json
       return unless $delaunay_debug
 
-      @@instance&.save_json(log: @@log_msg)
+      @@instance&.save_json_internal(log: @@log_msg)
     end
 
     def self.set_instance(d)
@@ -155,7 +157,7 @@ module MB
       end
 
       def name
-        @name || "#{@idx}"
+        @name || "#{@hull&.hull_id}/#{@idx}"
       end
 
       # Sets a name for this point (+n+ will be prefixed by the point's index).
@@ -188,7 +190,7 @@ module MB
       end
 
       def to_s
-        "#{@idx}: [#{@x}, #{@y}]{#{@neighbors.length}}"
+        "#{name}: [#{@x}, #{@y}]{#{@neighbors.length}}"
       end
 
       def inspect
@@ -295,10 +297,10 @@ module MB
 
       # Adds point +p+ to the correct location in this point's adjacency lists.
       def add(p, set_first = false)
-        raise "Cannot add identical point #{p.inspect} as a neighbor of #{self.inspect}" if p == self
-        raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if @pointset.include?(p.__id__)
+        raise "Cannot add identical point #{p} as a neighbor of #{self}" if p == self
+        raise "Point #{p} is already a neighbor of #{self}" if @pointset.include?(p.__id__)
 
-        Delaunay.loglog { "\e[33mInserting \e[1m#{p.inspect}\e[22m into adjacency list of \e[1m#{self.inspect}\e[0m" }
+        Delaunay.loglog { "\e[33mInserting \e[1m#{p}\e[22m into adjacency list of \e[1m#{self}\e[0m" }
 
         @pointset << p.__id__
 
@@ -373,7 +375,8 @@ module MB
       { points: self.to_a, outside_test: @outside_test, tangents: @tangents }
     end
 
-    def save_json(h = {})
+    # Call Delaunay.save_json instead.
+    def save_json_internal(h = {})
       @json_idx ||= 0
 
       @last_json ||= nil
@@ -436,7 +439,7 @@ module MB
         # Connect points to each other in counterclockwise order
         cross = p2.cross(p1, p3)
         if cross < 0
-          Delaunay.loglog { " p1 -> p2 -> p3" }
+          Delaunay.loglog { " cross: #{cross}; linking p1 -> p2 -> p3" }
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
           p2.add(p3)
@@ -446,7 +449,7 @@ module MB
           p2.add(p1)
           p1.add(p3)
         elsif cross > 0
-          Delaunay.loglog { " p1 -> p3 -> p2" }
+          Delaunay.loglog { " cross: #{cross}; linking p1 -> p3 -> p2" }
           # p2 is left of p1->p3; put p2 on the top
           p1.add(p3)
           p3.add(p2)
@@ -457,7 +460,7 @@ module MB
           p3.add(p1)
         else
           # p2 is on a line between p1 and p3; link left-to-right
-          Delaunay.loglog { " p1 -> p2 ; p2 -> p3" }
+          Delaunay.loglog { " cross: #{cross}; linking p1 -> p2 ; linking p2 -> p3" }
           p1.add(p2)
           p2.add(p3)
 
@@ -619,7 +622,7 @@ module MB
 
       @tangents = nil
 
-      left.add_hull(right).tap { save_json }
+      left.add_hull(right).tap { Delaunay.save_json }
     end
 
     # Returns true if the query point +q+ is not inside the circumcircle
@@ -627,26 +630,25 @@ module MB
     #
     # Analogous to QTEST(H, I, J, K) in Lee and Schachter.
     def outside?(p1, p2, p3, q)
-      Delaunay.loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " } if $delaunay_debug
-
-      return true if q.equal?(p1) || q.equal?(p2) || q.equal?(p3)
-
       # TODO: memoize circumcircle and relative-angle computations?
       x, y, rsquared = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+
+      @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: Math.sqrt(rsquared) }
+      Delaunay.save_json
+
+      Delaunay.loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " }
 
       dx = q.x - x
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
-      outside = dsquared.round(9) >= rsquared.round(9)
+      outside = q.equal?(p1) || q.equal?(p2) || q.equal?(p3) || dsquared.round(9) >= rsquared.round(9)
 
-      if $delaunay_debug
-        Delaunay.loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} \e[1m#{outside}\e[0m" }
+      Delaunay.loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} Outside:\e[1m#{outside}\e[0m" }
 
-        @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: Math.sqrt(rsquared) }
-        Delaunay.save_json
-        @outside_test = nil
-      end
+      Delaunay.save_json
+      @outside_test = nil
+      Delaunay.save_json
 
       outside
     end
