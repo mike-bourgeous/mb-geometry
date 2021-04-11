@@ -498,6 +498,7 @@ module MB
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
+      # TODO: This should probably use sigfigs instead of rounding, because nearly collinear points sometimes produce giant radii that are off by a factor of like 10e-8
       dsquared.round(9) >= rsquared.round(9)
     end
 
