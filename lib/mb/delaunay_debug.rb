@@ -221,13 +221,17 @@ module MB
       # https://en.wikipedia.org/wiki/Cross_product#Computational_geometry
       # https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
       def right_of?(p1, p2)
-        cross(p1, p2).round(6) < 0
+        cross = cross(p1, p2).round(6)
+        Delaunay.loglog { "Is #{self} to the right of #{p1} -> #{p2}?  cross: #{cross} -> #{cross < 0}" }
+        cross < 0
       end
 
       # Returns true if this point is to the left of the ray from +p1+ to +p2+.
       # Returns false if right or collinear.
       def left_of?(p1, p2)
-        cross(p1, p2).round(6) > 0
+        cross = cross(p1, p2).round(6)
+        Delaunay.loglog { "Is #{self} to the left of #{p1} -> #{p2}?  cross: #{cross} -> #{cross > 0}" }
+        cross > 0
       end
 
       def neighbors
@@ -437,7 +441,7 @@ module MB
         p1, p2, p3 = points
 
         # Connect points to each other in counterclockwise order
-        cross = p2.cross(p1, p3).round(4)
+        cross = p2.cross(p1, p3).round(6)
         if cross < 0
           Delaunay.loglog { " cross: #{cross}; linking p1 -> p2 -> p3" }
           # p2 is right of p1->p3; put p2 on the bottom

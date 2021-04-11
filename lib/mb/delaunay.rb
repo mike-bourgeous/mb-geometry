@@ -368,7 +368,7 @@ module MB
         p1, p2, p3 = points
 
         # Connect points to each other in counterclockwise order
-        cross = p2.cross(p1, p3).round(4)
+        cross = p2.cross(p1, p3).round(6)
         if cross < 0
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
