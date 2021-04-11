@@ -235,23 +235,7 @@ module MB
       end
 
       def neighbors
-        @neighbors.dup # XXX replace with @cw.keys??
-      end
-
-      # XXX
-      def neighbors_clockwise
-        return @cw.keys if @cw.length == 1
-
-        start = @cw.keys.first
-        ptr = @cw[start]
-        arr = [start]
-
-        while ptr != start
-          arr << ptr
-          ptr = @cw[ptr]
-        end
-
-        arr
+        @neighbors.dup
       end
 
       # Returns the next clockwise neighbor to this point from point +p+.
@@ -269,7 +253,7 @@ module MB
           # a proper fix for the point-walk ending up on the wrong hull, or if
           # it causes new problems
           idx = (idx - 1) % @neighbors.length
-          n = @neighbors[idx] # XXX FIXME hack to get this working
+          n = @neighbors[idx]
 
           break if n.hull == hull || idx == base_idx
         end
@@ -290,8 +274,8 @@ module MB
           # Skip newly added neighbors during a hull merge; not sure if this is
           # a proper fix for the point-walk ending up on the wrong hull, or if
           # it causes new problems
-          idx = (idx + 1) % @neighbors.length # FIXME not sure if this is the right offset in the case of bsearch
-          n = @neighbors[idx] # XXX FIXME hack to get this working
+          idx = (idx + 1) % @neighbors.length
+          n = @neighbors[idx]
 
           break if n.hull == hull || idx == base_idx
         end
@@ -348,8 +332,6 @@ module MB
 
     # TODO: methods for adding and removing individual points, using a fast
     # algorithm for single-point insertion
-
-    # TODO: methods for retrieving a set of triangles, not just points/edges
 
     def to_a
       @sorted_points.map { |p|
@@ -507,7 +489,6 @@ module MB
         Delaunay.loglog { "\e[36mTangents are \e[1m#{l_l} -> #{l_r}\e[22m and \e[1m#{u_l} -> #{u_r}\e[0m" }
       end
 
-      # XXX
       # TODO a name stack would be better, so U_R can become R2 and go back to U_R
       if $delaunay_debug
         l_l.name = 'L_L'
