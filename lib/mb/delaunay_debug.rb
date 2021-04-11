@@ -285,7 +285,6 @@ module MB
 
       # Adds point +p+ to the correct location in this point's adjacency lists.
       def add(p, set_first = false)
-        raise "Cannot add identical point #{p} as a neighbor of #{self}" if p == self
         raise "Point #{p} is already a neighbor of #{self}" if @pointset.include?(p.__id__)
 
         Delaunay.loglog { "\e[33mInserting \e[1m#{p}\e[22m into adjacency list of \e[1m#{self}\e[0m" }
