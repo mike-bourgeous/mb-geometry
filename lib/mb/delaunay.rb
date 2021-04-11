@@ -258,7 +258,7 @@ module MB
       end
     end
 
-    attr_reader :points
+    attr_reader :points, :sorted_points
 
     # Initializes a triangulation of the given Array of +points+ of the
     # following form: [ [x1, y1], [x2, y2], ... ].

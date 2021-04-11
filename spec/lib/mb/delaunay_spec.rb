@@ -396,14 +396,31 @@ RSpec.describe(MB::Delaunay) do
   }
 
   describe '#points' do
-    it 'returns points in sorted order' do
+    it 'returns points in original order' do
       expect(trivial3.points.map { |p| [p.x, p.y] }).to eq([
+        [-1, -1],
+        [1, -1],
+        [0, 1],
+      ])
+
+      expect(trivial4.points.map { |p| [p.x, p.y] }).to eq([
+        [-1, -1],
+        [1, -1],
+        [0.5, 0],
+        [1, 1],
+      ])
+    end
+  end
+
+  describe '#sorted_points' do
+    it 'returns points in sorted order' do
+      expect(trivial3.sorted_points.map { |p| [p.x, p.y] }).to eq([
         [-1, -1],
         [0, 1],
         [1, -1],
       ])
 
-      expect(trivial4.points.map { |p| [p.x, p.y] }).to eq([
+      expect(trivial4.sorted_points.map { |p| [p.x, p.y] }).to eq([
         [-1, -1],
         [0.5, 0],
         [1, -1],
@@ -414,18 +431,18 @@ RSpec.describe(MB::Delaunay) do
 
   describe '#triangulate' do
     it 'produces a valid triangulation for three trivial input points' do
-      expect(trivial3.points[0].first).to eq(trivial3.points[2])
-      expect(trivial3.points[2].first).to eq(trivial3.points[1])
-      expect(trivial3.points[1].first).to eq(trivial3.points[0])
+      expect(trivial3.sorted_points[0].first).to eq(trivial3.sorted_points[2])
+      expect(trivial3.sorted_points[2].first).to eq(trivial3.sorted_points[1])
+      expect(trivial3.sorted_points[1].first).to eq(trivial3.sorted_points[0])
 
-      expect(trivial3.points[0].neighbors.sort).to eq([
-        trivial3.points[1], trivial3.points[2]
+      expect(trivial3.sorted_points[0].neighbors.sort).to eq([
+        trivial3.sorted_points[1], trivial3.sorted_points[2]
       ])
-      expect(trivial3.points[1].neighbors.sort).to eq([
-        trivial3.points[0], trivial3.points[2]
+      expect(trivial3.sorted_points[1].neighbors.sort).to eq([
+        trivial3.sorted_points[0], trivial3.sorted_points[2]
       ])
-      expect(trivial3.points[2].neighbors.sort).to eq([
-        trivial3.points[0], trivial3.points[1]
+      expect(trivial3.sorted_points[2].neighbors.sort).to eq([
+        trivial3.sorted_points[0], trivial3.sorted_points[1]
       ])
     end
 
