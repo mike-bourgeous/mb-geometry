@@ -1,10 +1,17 @@
 require 'matrix'
 require 'forwardable'
 require 'set'
+require 'json'
+require 'mb/sound'
+
 
 module MB
   # Pure Ruby Delaunay triangulation.
   class Delaunay
+    CROSS_PRODUCT_ROUNDING = 6
+    INPUT_POINT_ROUNDING = 9
+    RADIUS_SIGFIGS = 9
+
     class Hull
       extend Forwardable
 
@@ -104,8 +111,8 @@ module MB
       attr_accessor :hull
 
       def initialize(x, y, idx = nil)
-        @x = x.round(9)
-        @y = y.round(9)
+        @x = x.round(INPUT_POINT_ROUNDING)
+        @y = y.round(INPUT_POINT_ROUNDING)
         @idx = idx
 
         @pointset = Set.new
@@ -171,7 +178,7 @@ module MB
       #
       # FIXME: this should maybe reordered as a method on +o+?
       def cross(o, p)
-        (p.x - o.x) * (self.y - o.y) - (p.y - o.y) * (self.x - o.x)
+        ((p.x - o.x) * (self.y - o.y) - (p.y - o.y) * (self.x - o.x)).round(CROSS_PRODUCT_ROUNDING)
       end
 
       # Returns true if this point is to the right of the ray from +p1+ to
@@ -180,13 +187,13 @@ module MB
       # https://en.wikipedia.org/wiki/Cross_product#Computational_geometry
       # https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
       def right_of?(p1, p2)
-        cross(p1, p2).round(6) < 0
+        cross(p1, p2) < 0
       end
 
       # Returns true if this point is to the left of the ray from +p1+ to +p2+.
       # Returns false if right or collinear.
       def left_of?(p1, p2)
-        cross(p1, p2).round(6) > 0
+        cross(p1, p2) > 0
       end
 
       def neighbors
@@ -368,7 +375,7 @@ module MB
         p1, p2, p3 = points
 
         # Connect points to each other in counterclockwise order
-        cross = p2.cross(p1, p3).round(6)
+        cross = p2.cross(p1, p3)
         if cross < 0
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
@@ -498,8 +505,7 @@ module MB
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
-      # TODO: This should probably use sigfigs instead of rounding, because nearly collinear points sometimes produce giant radii that are off by a factor of like 10e-8
-      dsquared.round(9) >= rsquared.round(9)
+      MB::Sound::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::Sound::M.sigfigs(rsquared, RADIUS_SIGFIGS)
     end
 
     public

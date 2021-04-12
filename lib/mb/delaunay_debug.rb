@@ -2,6 +2,7 @@ require 'matrix'
 require 'forwardable'
 require 'set'
 require 'json'
+require 'mb/sound'
 
 if $DEBUG || ENV['DEBUG']
   $delaunay_debug = true
@@ -12,6 +13,10 @@ end
 module MB
   # Pure Ruby Delaunay triangulation.
   class Delaunay
+    CROSS_PRODUCT_ROUNDING = 6
+    INPUT_POINT_ROUNDING = 9
+    RADIUS_SIGFIGS = 9
+
     def self.loglog(s = nil)
       return unless $delaunay_debug
 
@@ -145,8 +150,8 @@ module MB
       attr_accessor :hull
 
       def initialize(x, y, idx = nil)
-        @x = x.round(9)
-        @y = y.round(9)
+        @x = x.round(INPUT_POINT_ROUNDING)
+        @y = y.round(INPUT_POINT_ROUNDING)
         @idx = idx
 
         @pointset = Set.new
@@ -212,7 +217,7 @@ module MB
       #
       # FIXME: this should maybe reordered as a method on +o+?
       def cross(o, p)
-        ((p.x - o.x) * (self.y - o.y) - (p.y - o.y) * (self.x - o.x))
+        ((p.x - o.x) * (self.y - o.y) - (p.y - o.y) * (self.x - o.x)).round(CROSS_PRODUCT_ROUNDING)
       end
 
       # Returns true if this point is to the right of the ray from +p1+ to
@@ -221,7 +226,7 @@ module MB
       # https://en.wikipedia.org/wiki/Cross_product#Computational_geometry
       # https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
       def right_of?(p1, p2)
-        cross = cross(p1, p2).round(6)
+        cross = cross(p1, p2)
         Delaunay.loglog { "Is #{self} to the right of #{p1} -> #{p2}?  cross: #{cross} -> #{cross < 0}" }
         cross < 0
       end
@@ -229,7 +234,7 @@ module MB
       # Returns true if this point is to the left of the ray from +p1+ to +p2+.
       # Returns false if right or collinear.
       def left_of?(p1, p2)
-        cross = cross(p1, p2).round(6)
+        cross = cross(p1, p2)
         Delaunay.loglog { "Is #{self} to the left of #{p1} -> #{p2}?  cross: #{cross} -> #{cross > 0}" }
         cross > 0
       end
@@ -422,9 +427,9 @@ module MB
         p1, p2, p3 = points
 
         # Connect points to each other in counterclockwise order
-        cross = p2.cross(p1, p3).round(6)
+        cross = p2.cross(p1, p3)
         if cross < 0
-          Delaunay.loglog { " cross: #{cross}; linking p1 -> p2 -> p3" }
+          Delaunay.loglog { " cross: #{cross}; linking p1 #{p1} -> p2 #{p2} -> p3 #{p3}" }
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
           p2.add(p3)
@@ -434,7 +439,7 @@ module MB
           p2.add(p1)
           p1.add(p3)
         elsif cross > 0
-          Delaunay.loglog { " cross: #{cross}; linking p1 -> p3 -> p2" }
+          Delaunay.loglog { " cross: #{cross}; linking p1 #{p1} -> p3 #{p3} -> p2 #{p2}" }
           # p2 is left of p1->p3; put p2 on the top
           p1.add(p3)
           p3.add(p2)
@@ -445,7 +450,7 @@ module MB
           p3.add(p1)
         else
           # p2 is on a line between p1 and p3; link left-to-right
-          Delaunay.loglog { " cross: #{cross}; linking p1 -> p2 ; linking p2 -> p3" }
+          Delaunay.loglog { " cross: #{cross}; linking p1 #{p1} -> p2 #{p2} ; linking p2 -> p3 #{p3}" }
           p1.add(p2)
           p2.add(p3)
 
@@ -626,7 +631,7 @@ module MB
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
-      outside = q.equal?(p1) || q.equal?(p2) || q.equal?(p3) || dsquared.round(9) >= rsquared.round(9)
+      outside = q.equal?(p1) || q.equal?(p2) || q.equal?(p3) || MB::Sound::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::Sound::M.sigfigs(rsquared, RADIUS_SIGFIGS)
 
       Delaunay.loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} Outside:\e[1m#{outside}\e[0m" }
 
@@ -659,7 +664,7 @@ module MB
     # Temporarily copied here from my Geometry class in another project, to be
     # merged eventually.
     # Returns the circumcircle of the triangle defined by the given three
-    # points as [x, y, r].  Returns nil if the points are collinear.
+    # points as [x, y, rsquared].  Returns nil if the points are collinear.
     def self.circumcircle(x1, y1, x2, y2, x3, y3)
       x, y = circumcenter(x1, y1, x2, y2, x3, y3)
       return nil unless x

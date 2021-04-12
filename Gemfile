@@ -8,3 +8,5 @@ gem 'rspec'
 gem 'pry'
 gem 'pry-byebug'
 gem 'ruby-prof'
+
+gem 'mb-sound', github: 'mike-bourgeous/mb-sound'
