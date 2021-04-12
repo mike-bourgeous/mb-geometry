@@ -60,9 +60,8 @@ module MB
       end
 
       def add_hull(h)
-        @leftmost = h.leftmost if @leftmost.nil? || h.leftmost < @leftmost
-        @rightmost = h.rightmost if @rightmost.nil? || h.rightmost > @rightmost
-        points.concat(h.points)
+        @rightmost = h.rightmost
+        @points.concat(h.points)
 
         h.points.each do |p| p.hull = self end
 
@@ -140,12 +139,8 @@ module MB
       end
     end
 
-    # TODO: Do we need a Line class to represent the tangents worked on by #merge?
-
     class Point
-      include Comparable
-
-      attr_reader :x, :y, :first, :idx
+      attr_reader :x, :y, :first, :idx, :name
 
       attr_accessor :hull
 
@@ -158,11 +153,11 @@ module MB
         @neighbors = []
         @first = nil
         @hull = nil
-        @name = nil
+        self.name = nil
       end
 
       def name
-        @name || "#{@hull&.hull_id}/#{@idx}"
+        @name
       end
 
       # Sets a name for this point (+n+ will be prefixed by the point's index).
@@ -188,10 +183,12 @@ module MB
         end
       end
 
-      # Returns true if the other point has the same coordinates as this point.
-      # Overrides Comparable#== because this is faster.
-      def ==(other)
-        other.x == x && other.y == y
+      def <(other)
+        x < other.x || x == other.x && y < other.y
+      end
+
+      def >(other)
+        x > other.x || x == other.x && y > other.y
       end
 
       def to_s
@@ -202,12 +199,10 @@ module MB
         "#<MB::Delaunay::Point:#{__id__} #{to_s}"
       end
 
-      # Returns an angle from self to +p+ from 0 to 2PI starting at the
-      # positive X axis.
+      # Returns an angle from self to +p+ from -PI to PI starting at the
+      # negative X axis.
       def angle(p)
-        a = Math.atan2(p.y - self.y, p.x - self.x)
-        a += 2.0 * Math::PI if a < 0
-        a
+        Math.atan2(p.y - self.y, p.x - self.x)
       end
 
       # Returns the 2D cross product between the two rays +o+->+p+ and
@@ -290,14 +285,13 @@ module MB
 
       # Adds point +p+ to the correct location in this point's adjacency lists.
       def add(p, set_first = false)
-        raise "Point #{p} is already a neighbor of #{self}" if @pointset.include?(p.__id__)
-
         Delaunay.loglog { "\e[33mInserting \e[1m#{p}\e[22m into adjacency list of \e[1m#{self}\e[0m" }
-
-        @pointset << p.__id__
 
         angle = self.angle(p)
         prior_idx = @neighbors.bsearch_index { |n| self.angle(n) >= angle }
+
+        raise "Point #{p.inspect} is already a neighbor of #{self.inspect}" if prior_idx && @neighbors[prior_idx] == p
+
         @neighbors.insert(prior_idx || @neighbors.length, p)
 
         @first = p if @first.nil? || set_first
@@ -305,14 +299,15 @@ module MB
 
       # Removes point +p+ from this point's adjacency lists.
       def remove(p)
-        raise "Point #{p} is not a neighbor of #{self}" unless @pointset.include?(p.__id__)
+        raise "Point #{p} is not a neighbor of #{self}" unless @neighbors.include?(p)
 
+        @first = counterclockwise(@first) if @first.equal?(p)
+        @first = nil if @first.equal?(p)
         @neighbors.delete(p)
-        @pointset.delete(p)
-
-        @first = @neighbors.first if @first.equal?(p)
       end
     end
+
+
 
     attr_reader :points, :sorted_points
 
@@ -377,6 +372,30 @@ module MB
         @json_idx += 1
         @last_json = this_json
       end
+    end
+
+    def triangles
+      traversed = Set.new
+      triangles = Set.new
+
+      @sorted_points.each do |p|
+        p.neighbors.each do |n|
+          key = n > p ? [p, n] : [n, p]
+          next if traversed.include?(key)
+          traversed << key
+
+          ncw = n.clockwise(p)
+          pccw = p.counterclockwise(n)
+          if ncw == pccw
+            # TODO: There are still a lot of cases where a triangle is already
+            # in the set; try to find a way to skip more of that duplicated
+            # work
+            triangles << [n, p, ncw].sort
+          end
+        end
+      end
+
+      triangles.to_a
     end
 
     private
@@ -470,6 +489,10 @@ module MB
 
         merge(triangulate(left), triangulate(right))
       end
+
+    rescue => e
+      Delaunay.loglog { "\e[31mTriangulation of #{points.length} failed: \e[1m#{e}\e[0m" }
+      raise
 
     ensure
       Delaunay.save_json
@@ -612,6 +635,16 @@ module MB
       @tangents = nil
 
       left.add_hull(right).tap { Delaunay.save_json }
+    rescue => e
+      f = "/tmp/hull_#{left.hull_id}_#{right.hull_id}.json"
+      File.write(
+        f,
+        JSON.pretty_generate(
+          (left.points + right.points).map { |p| [p.x, p.y, p.idx] }
+        )
+      )
+
+      raise "Merging #{right.hull_id} (#{right.points} pts) into #{left.hull_id} (#{left.points} pts) failed: #{e}.  Wrote #{f} to debug."
     end
 
     # Returns true if the query point +q+ is not inside the circumcircle
@@ -619,13 +652,11 @@ module MB
     #
     # Analogous to QTEST(H, I, J, K) in Lee and Schachter.
     def outside?(p1, p2, p3, q)
-      # TODO: memoize circumcircle and relative-angle computations?
       x, y, rsquared = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
 
       @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: Math.sqrt(rsquared) }
-      Delaunay.save_json
-
       Delaunay.loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " }
+      Delaunay.save_json
 
       dx = q.x - x
       dy = q.y - y
@@ -697,8 +728,6 @@ module MB
     # intersection exists.  Returns nil if the lines are coincident or there is
     # no intersection.
     def self.line_intersection(line1, line2)
-      line1 = line1[1..3] if :l == line1[0]
-      line2 = line2[1..3] if :l == line2[0]
       a, b, c = line1
       d, e, f = line2
 

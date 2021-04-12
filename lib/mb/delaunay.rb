@@ -103,10 +103,8 @@ module MB
       end
     end
 
-    # TODO: Do we need a Line class to represent the tangents worked on by #merge?
-
     class Point
-      attr_reader :x, :y, :first, :idx
+      attr_reader :x, :y, :first, :idx, :name
 
       attr_accessor :hull
 
@@ -119,19 +117,19 @@ module MB
         @neighbors = []
         @first = nil
         @hull = nil
-        @name = nil
+        self.name = nil
       end
 
       def name
-        @name || "#{@idx}"
+        @name
       end
 
       # Sets a name for this point (+n+ will be prefixed by the point's index).
       def name=(n)
         if n.nil?
-          @name = nil
+          @name = "#{@hull&.hull_id}/#{@idx}"
         else
-          @name = "#{@idx}: #{n}"
+          @name = "#{@hull&.hull_id}/#{@idx}: #{n}"
         end
       end
 
@@ -259,11 +257,13 @@ module MB
 
       # Removes point +p+ from this point's adjacency lists.
       def remove(p)
+        @first = counterclockwise(@first) if @first.equal?(p)
+        @first = nil if @first.equal?(p)
         @neighbors.delete(p)
-
-        @first = @neighbors.first if @first.equal?(p)
       end
     end
+
+
 
     attr_reader :points, :sorted_points
 
@@ -283,8 +283,6 @@ module MB
 
     # TODO: methods for adding and removing individual points, using a fast
     # algorithm for single-point insertion
-
-    # TODO: methods for retrieving a set of triangles, not just points/edges
 
     def to_a
       @sorted_points.map { |p|
@@ -489,7 +487,7 @@ module MB
         )
       )
 
-      raise "Merging failed: #{e}.  Wrote #{f} to debug."
+      raise "Merging #{right.hull_id} (#{right.points} pts) into #{left.hull_id} (#{left.points} pts) failed: #{e}.  Wrote #{f} to debug."
     end
 
     # Returns true if the query point +q+ is not inside the circumcircle
