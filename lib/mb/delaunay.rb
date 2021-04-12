@@ -8,9 +8,9 @@ require 'mb/sound'
 module MB
   # Pure Ruby Delaunay triangulation.
   class Delaunay
-    CROSS_PRODUCT_ROUNDING = 6
+    CROSS_PRODUCT_ROUNDING = 5
     INPUT_POINT_ROUNDING = 9
-    RADIUS_SIGFIGS = 8
+    RADIUS_SIGFIGS = 7
 
     class Hull
       extend Forwardable
