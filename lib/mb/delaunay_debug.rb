@@ -669,7 +669,11 @@ module MB
 
       outside = q.equal?(p1) || q.equal?(p2) || q.equal?(p3) || MB::Sound::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::Sound::M.sigfigs(rsquared, RADIUS_SIGFIGS)
 
-      Delaunay.loglog { "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} Outside:\e[1m#{outside}\e[0m" }
+      close_call = MB::Sound::M.sigfigs(dsquared, 3) >= MB::Sound::M.sigfigs(rsquared, 3) || dsquared.round(4) >= rsquared.round(4)
+
+      Delaunay.loglog {
+        "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} Outside: \e[1m#{outside}\e[22m Close: \e[1m#{close_call}\e[0m"
+      }
 
       Delaunay.save_json
       @outside_test = nil
