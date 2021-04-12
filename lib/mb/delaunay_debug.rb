@@ -21,7 +21,7 @@ module MB
       return unless $delaunay_debug
 
       s = yield if block_given?
-      puts "#{' ' * caller.length}#{s}"
+      STDERR.puts "#{' ' * caller.length}#{s}"
       unless s.include?('Writing JSON')
         @@log_msg = s.gsub(/\e\[[0-9;]*[^0-9;]/, '')
         save_json
