@@ -352,7 +352,7 @@ module MB
     def triangulate(points)
       case points.length
       when 0
-        raise "No points were given to triangulate"
+        Hull.new([])
 
       when 1
         Hull.new(points)
