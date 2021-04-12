@@ -60,7 +60,10 @@ until ARGV.empty?
 
     # TODO: Use MB::Sound::U.highlight after refactoring utilities elsewhere
     puts Pry::ColorPrinter.pp(
-      t.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h,
+      {
+        neighbors: t.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h,
+        triangles: tris.map { |t| t = t.sort; [t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y] }.sort,
+      },
       '',
       80
     )
