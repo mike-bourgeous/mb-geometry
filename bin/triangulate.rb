@@ -22,36 +22,52 @@ if ARGV.length < 1
   exit 1
 end
 
+errors = {}
+
 until ARGV.empty?
   # TODO: Merge with Geometry::Voronoi.generate_from_file when this project is merged with that one
   puts "Triangulating \e[1;36m#{ARGV[0]}\e[0m"
 
-  case File.extname(ARGV[0])
-  when '.json'
-    points = JSON.parse(File.read(ARGV[0]), symbolize_names: true)
+  begin
+    case File.extname(ARGV[0])
+    when '.json'
+      points = JSON.parse(File.read(ARGV[0]), symbolize_names: true)
 
-  when '.yaml', '.yml'
-    points = YAML.load(File.read(ARGV[0]), symbolize_names: true)
+    when '.yaml', '.yml'
+      points = YAML.load(File.read(ARGV[0]), symbolize_names: true)
 
-  else
-    raise "Unknown extension #{File.extname(ARGV[0])}"
+    else
+      raise "Unknown extension #{File.extname(ARGV[0])}"
+    end
+
+    points = points[:points] if points.is_a?(Hash)
+
+    t = nil
+    elapsed = Benchmark.realtime do
+      t = MB::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y], p[:name]] })
+    end
+
+    puts "Triangulated \e[1m#{points.length}\e[0m points in \e[1m#{elapsed}\e[0m seconds."
+
+    # TODO: Use MB::Sound::U.highlight after refactoring utilities elsewhere
+    puts Pry::ColorPrinter.pp(
+      t.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h,
+      '',
+      80
+    )
+  rescue => e
+    puts "\e[31mError triangulating: \e[1m#{e}\n\t#{e.backtrace.join("\n\t")}\e[0m"
+
+    errors[ARGV[0]] = e.message || e.to_s
   end
-
-  points = points[:points] if points.is_a?(Hash)
-
-  t = nil
-  elapsed = Benchmark.realtime do
-    t = MB::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y], p[:name]] })
-  end
-
-  puts "Triangulated \e[1m#{points.length}\e[0m points in \e[1m#{elapsed}\e[0m seconds."
-
-  # TODO: Use MB::Sound::U.highlight after refactoring utilities elsewhere
-  puts Pry::ColorPrinter.pp(
-    t.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h,
-    '',
-    80
-  )
 
   ARGV.shift
+end
+
+if errors.any?
+  puts "\n\n\e[1mErrors:\e[0m"
+  errors.each do |filename, error|
+    puts "  \e[1;36m#{filename}\e[0m => \e[31m#{error}"
+  end
+  exit 1
 end
