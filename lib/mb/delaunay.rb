@@ -120,10 +120,6 @@ module MB
         self.name = nil
       end
 
-      def name
-        @name
-      end
-
       # Sets a name for this point (+n+ will be prefixed by the point's index).
       def name=(n)
         if n.nil?
@@ -487,7 +483,7 @@ module MB
         )
       )
 
-      raise "Merging #{right.hull_id} (#{right.points} pts) into #{left.hull_id} (#{left.points} pts) failed: #{e}.  Wrote #{f} to debug."
+      raise "Merging #{right.hull_id} (#{right.count} pts) into #{left.hull_id} (#{left.count} pts) failed: #{e}.  Wrote #{f} to debug."
     end
 
     # Returns true if the query point +q+ is not inside the circumcircle

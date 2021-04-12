@@ -35,6 +35,7 @@ module MB
     def self.save_json
       return unless $delaunay_debug && $delaunay_json
 
+      @@instance ||= nil
       @@instance&.save_json_internal(log: @@log_msg)
     end
 
@@ -648,7 +649,7 @@ module MB
         )
       )
 
-      raise "Merging #{right.hull_id} (#{right.points} pts) into #{left.hull_id} (#{left.points} pts) failed: #{e}.  Wrote #{f} to debug."
+      raise "Merging #{right.hull_id} (#{right.count} pts) into #{left.hull_id} (#{left.count} pts) failed: #{e}.  Wrote #{f} to debug."
     end
 
     # Returns true if the query point +q+ is not inside the circumcircle
