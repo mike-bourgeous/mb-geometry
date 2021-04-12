@@ -15,20 +15,32 @@ Guibas and Stolfi, which the ACM still charges for and thus I have not read.
 - The adjacency list is specified as being a circular doubly-linked list, which
   is a linear structure, but then accessed using two-parameter functions PRED
   and SUCC making it seem like a two dimensional (page 226 of the below-linked
-  PDF).  Later, mention is made of individual adjacency lists.
-- The paper doesn't specify when mutations of variables are to occur.  When
-  mutations are performed exactly as listed in the paper's MERGE subroutine,
-  the clockwise and counterclockwise navigation functions (PRED and SUCC) get
-  confused by newly added or removed edges.  This can cause the point-walk on
-  the right and left side hulls to cross over to the wrong hull, and also try
-  to navigate around a point that has been removed (and thus is no longer in
-  the adjacency list).
+  PDF).  Later, mention is made of individual adjacency lists rather than a
+  single adjacency list.
+- The paper doesn't specify exactly when mutations of variables or neighbors
+  are to occur.
+  - Assigning variables in sequence would cause some computed values to be
+    discarded, so they have to be computed separately and then assigned
+    afterward.
+  - When mutations are performed exactly as listed in the paper's MERGE
+    subroutine, the clockwise and counterclockwise navigation functions (PRED
+    and SUCC) get confused by newly added or removed edges.  This can cause the
+    point-walk on the right and left side hulls to cross over to the wrong
+    hull, and also try to navigate around a point that has been removed (and
+    thus is no longer in the adjacency list).
 - It's not really clear how the FIRST function is supposed to operate.  I'm
   just manually marking an edge as "first" when I know it's part of a convex
   hull.
 - Rounding error on the circumcircle distance comparison can cause
   triangulation to fail, if not accounted for.  This implementation rounds to a
   fixed number of decimal places as a partial workaround.
+- The paper doesn't specify how to triangulate the bottom-level subdivisions of
+  2 or 3 points.  I took a few guesses to try to maintain the invariant that
+  `point.first()` will navigate counterclockwise around the convex hull, but if
+  the bottom-level subdivision contains 3 collinear or approximately collinear
+  points, it's less clear what is correct.
+- The algorithm detail section of the paper doesn't mention some degenerate or
+  difficult cases like straight lines or nearly straight lines.
 
 ## References
 
