@@ -43,11 +43,20 @@ until ARGV.empty?
     points = points[:points] if points.is_a?(Hash)
 
     t = nil
-    elapsed = Benchmark.realtime do
+    elapsed_triangulate = Benchmark.realtime do
       t = MB::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y], p[:name]] })
     end
 
-    puts "Triangulated \e[1m#{points.length}\e[0m points in \e[1m#{elapsed}\e[0m seconds."
+    tris = nil
+    elapsed_triangles = Benchmark.realtime do
+      tris = t.triangles
+    end
+
+    circumcircles = tris.map { |t|
+      MB::Delaunay.circumcircle(t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y)
+    }
+
+    puts "Triangulated \e[1m#{points.length}\e[0m points in \e[1m#{elapsed_triangulate}\e[0m seconds (\e[1m#{elapsed_triangles}\e[0ms for \e[1m#{tris.length}\e[0m triangles)"
 
     # TODO: Use MB::Sound::U.highlight after refactoring utilities elsewhere
     puts Pry::ColorPrinter.pp(
@@ -55,6 +64,9 @@ until ARGV.empty?
       '',
       80
     )
+
+    degenerates = circumcircles.select { |cc| cc.nil? || cc.any?(&:nil?) }
+    raise "There are #{degenerates.count} degenerate triangles out of #{tris.count}" unless degenerates.empty?
   rescue => e
     puts "\e[31mError triangulating: \e[1m#{e}\n\t#{e.backtrace.join("\n\t")}\e[0m"
 
