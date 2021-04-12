@@ -19,7 +19,7 @@ module MB
   class Delaunay
     CROSS_PRODUCT_ROUNDING = 6
     INPUT_POINT_ROUNDING = 9
-    RADIUS_SIGFIGS = 9
+    RADIUS_SIGFIGS = 8
 
     def self.loglog(s = nil)
       return unless $delaunay_debug
