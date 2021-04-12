@@ -4,11 +4,15 @@ require 'set'
 require 'json'
 require 'mb/sound'
 
+# DEBUG=1 to enable debugging
 if $DEBUG || ENV['DEBUG']
   $delaunay_debug = true
 else
   $delaunay_debug = false
 end
+
+# JSON=0 to disable json saving
+$delaunay_json = ENV['JSON'] != '0'
 
 module MB
   # Pure Ruby Delaunay triangulation.
@@ -29,7 +33,7 @@ module MB
     end
 
     def self.save_json
-      return unless $delaunay_debug
+      return unless $delaunay_debug && $delaunay_json
 
       @@instance&.save_json_internal(log: @@log_msg)
     end
