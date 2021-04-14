@@ -474,4 +474,5 @@ RSpec.describe(MB::Delaunay) do
   pending 'nested polygons'
   pending 'very tall skinny triangles'
   pending 'very wide skinny triangles'
+  pending 'regular square and hexagonal grids'
 end
