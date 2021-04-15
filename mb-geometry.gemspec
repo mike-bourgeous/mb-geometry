@@ -2,7 +2,7 @@ require_relative 'lib/mb/geometry/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "mb-geometry"
-  spec.version       = Mb::Geometry::VERSION
+  spec.version       = MB::Geometry::VERSION
   spec.authors       = ["Mike Bourgeous"]
   spec.email         = ["mike@mikebourgeous.com"]
 
