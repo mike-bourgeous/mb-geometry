@@ -36,11 +36,16 @@ until ARGV.empty?
       tris = t.triangles
     end
 
-    circumcircles = tris.map { |t|
-      MB::Geometry::Delaunay.circumcircle(t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y)
-    }
+    circumcircles = nil
+    elapsed_circumcircles = Benchmark.realtime do
+      circumcircles = tris.map { |t|
+        MB::Geometry::Delaunay.circumcircle(t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y)
+      }
+    end
 
-    puts "Triangulated \e[1m#{points.length}\e[0m points in \e[1m#{elapsed_triangulate}\e[0m seconds (\e[1m#{elapsed_triangles}\e[0ms for \e[1m#{tris.length}\e[0m triangles)"
+    puts "Triangulated \e[1m#{points.length}\e[0m points in \e[1m#{elapsed_triangulate}\e[0m seconds."
+    puts "Generated \e[1m#{tris.length}\e[0m triangles in \e[1m#{elapsed_triangles}\e[0m seconds."
+    puts "Calculated circumcircles in \e[1m#{elapsed_circumcircles}\e[0m seconds."
 
     # TODO: Use MB::Sound::U.highlight after refactoring utilities elsewhere
     puts Pry::ColorPrinter.pp(
