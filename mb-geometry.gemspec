@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'rubyvor', '0.1.4'
 
   spec.add_runtime_dependency 'mb-math'
+  spec.add_runtime_dependency 'mb-util'
 
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'pry'

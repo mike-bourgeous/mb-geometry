@@ -6,11 +6,18 @@ GIT
       cmath (~> 1.0.0)
       numo-narray (~> 0.9.1)
 
+GIT
+  remote: https://github.com/mike-bourgeous/mb-util.git
+  revision: 993d042b8e966d7967fac08338d7fc658bfb6af0
+  specs:
+    mb-util (0.0.1.usegit)
+
 PATH
   remote: .
   specs:
     mb-geometry (0.0.1.usegit)
       mb-math
+      mb-util
       rubyvor (= 0.1.4)
 
 GEM
@@ -54,6 +61,7 @@ PLATFORMS
 DEPENDENCIES
   mb-geometry!
   mb-math!
+  mb-util!
   pry
   pry-byebug
   rake (~> 13.0)

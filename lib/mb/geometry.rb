@@ -1,6 +1,7 @@
 require 'matrix'
 
-require 'mb/m'
+require 'mb-math'
+require 'mb-util'
 
 require_relative 'geometry/version'
 

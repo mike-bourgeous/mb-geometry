@@ -48,14 +48,12 @@ until ARGV.empty?
     puts "Generated \e[1m#{tris.length}\e[0m triangles in \e[1m#{elapsed_triangles}\e[0m seconds."
     puts "Calculated circumcircles in \e[1m#{elapsed_circumcircles}\e[0m seconds."
 
-    # TODO: Use MB::Sound::U.highlight after refactoring utilities elsewhere
-    puts Pry::ColorPrinter.pp(
+    puts MB::U.highlight(
       {
         neighbors: t.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h,
         triangles: tris.map { |t| t = t.sort; [t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y] }.sort,
       },
-      '',
-      80
+      columns: 80
     )
 
     degenerates = circumcircles.select { |cc| cc.nil? || cc.any?(&:nil?) }
