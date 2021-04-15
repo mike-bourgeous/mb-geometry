@@ -133,6 +133,13 @@ module MB
         # }
         #
         # {
+        #   generator: :segment, # See MB::Geometry::Generators.segment
+        #   count: 5,
+        #   from: [1, 1],
+        #   to: [5, 9],
+        # }
+        #
+        # {
         #   generator: :random, # see MB::Geometry::Generators.random_points
         #   count: 12,
         #   seed: 0,
@@ -179,7 +186,7 @@ module MB
             aspect = spec[:aspect] || 1.0
             raise "Aspect must be a Numeric for :polygon, if given" unless aspect.is_a?(Numeric)
 
-            # TODO: Maybe make rotation and translation post-generation transforms, like :anneal?
+            # TODO: Maybe make scaling, rotation, and translation post-generation transforms, like :anneal?
 
             rotate = spec[:rotate] || 0
             raise "Rotate must be a Numeric of degrees for :polygon, if given" unless rotate.is_a?(Numeric)
@@ -193,6 +200,20 @@ module MB
             points = points.reverse if spec[:clockwise]
             points = points.map { |p|
               { x: p[0] * aspect + translate[0], y: p[1] + translate[1] }
+            }
+
+          when :segment
+            count = spec[:count]
+            raise "Segment point count must be a positive Integer for :segment" unless count.is_a?(Integer) && count > 0
+
+            p1 = spec[:from]
+            raise "From point must be a two-element Numeric array" unless p1.is_a?(Array) && p1[0..1].all?(Numeric)
+
+            p2 = spec[:to]
+            raise "To point must be a two-element Numeric array" unless p1.is_a?(Array) && p1[0..1].all?(Numeric)
+
+            points = MB::Geometry::Generators.segment(count, p1, p2).map { |p|
+              { x: p[0], y: p[1] }
             }
 
           when :random

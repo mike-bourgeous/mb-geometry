@@ -139,6 +139,26 @@ RSpec.describe(MB::Geometry::Generators) do
       expect(points[0].values_at(:x, :y)).to eq([2, 0])
     end
 
+    it 'can generate a segment' do
+      spec = {
+        generator: :segment,
+        count: 5,
+        from: [1, 1],
+        to: [5, 9],
+      }
+
+      expected = [
+        [1, 1],
+        [2, 3],
+        [3, 5],
+        [4, 7],
+        [5, 9],
+      ]
+
+      points = MB::Geometry::Generators.generate(spec)
+      expect(points.map { |p| p.values_at(:x, :y) }).to eq(expected)
+    end
+
     it 'can generate random points' do
       spec = {
         generator: :random,
