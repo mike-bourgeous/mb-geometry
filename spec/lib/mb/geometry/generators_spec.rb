@@ -64,6 +64,67 @@ RSpec.describe(MB::Geometry::Generators) do
     end
   end
 
+  describe '.segment' do
+    it 'can generate a segment midpoint' do
+      points = MB::Geometry::Generators.segment(1, [0, 5], [2, 4])
+      expect(points.length).to eq(1)
+      expect(MB::M.round(points[0], 6)).to eq([1, 4.5])
+    end
+
+    it 'returns endpoints for a count of 2' do
+      points = MB::Geometry::Generators.segment(2, [0, 5], [2, 4])
+      expect(points).to eq([[0, 5], [2, 4]])
+    end
+
+    it 'can generate a horizontal segment' do
+      points = MB::Geometry::Generators.segment(5, [-5.5, 1.5], [-1.5, 1.5])
+      expected = [
+        [-5.5, 1.5],
+        [-4.5, 1.5],
+        [-3.5, 1.5],
+        [-2.5, 1.5],
+        [-1.5, 1.5],
+      ]
+      expect(points).to eq(expected)
+    end
+
+    it 'can generate a vertical segment' do
+      points = MB::Geometry::Generators.segment(5, [2.25, 1.5], [2.25, 5.5])
+      expected = [
+        [2.25, 1.5],
+        [2.25, 2.5],
+        [2.25, 3.5],
+        [2.25, 4.5],
+        [2.25, 5.5],
+      ]
+      expect(points).to eq(expected)
+    end
+  end
+
+  describe '.function' do
+    it 'can evaluate a function with a count of 1' do
+      points = MB::Geometry::Generators.function(1) { |t| [t, t] }
+      expect(points.map { |c| MB::M.round(c, 6) }).to eq([[0.5, 0.5]])
+    end
+
+    it 'can generate a parabola' do
+      points = MB::Geometry::Generators.function(10, tmin: 0, tmax: 9) { |t| [t, t * t] }
+      expected = [
+        [0, 0],
+        [1, 1],
+        [2, 4],
+        [3, 9],
+        [4, 16],
+        [5, 25],
+        [6, 36],
+        [7, 49],
+        [8, 64],
+        [9, 81],
+      ]
+      expect(points).to eq(expected)
+    end
+  end
+
   describe '.generate' do
     it 'can generate a polygon' do
       spec = {
