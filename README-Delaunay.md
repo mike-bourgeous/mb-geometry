@@ -16,6 +16,12 @@ Guibas and Stolfi, which the ACM still charges for and thus I have not read.
 There are two copies of the Delaunay code, one with detailed debugging, one
 with minimal debugging for better performance.
 
+The `DELAUNAY_DEBUG` environment variable may be set (to any value) to switch
+from the fast version to the debugging version.  The debugging version logs
+many steps of the algorithm to the console, and dumps JSON to /tmp of the state
+of the triangulation at each step.  The `JSON` environment variable may be set
+to `0` to disable JSON dumping when debugging is enabled.
+
 ## Questions about L&S
 
 - The adjacency list is specified as being a circular doubly-linked list, which

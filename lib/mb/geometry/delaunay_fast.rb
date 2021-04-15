@@ -4,39 +4,14 @@ require 'set'
 require 'json'
 require 'mb-math'
 
-# JSON=0 or $delaunay_json=false to disable json saving
-if !defined?($delaunay_json)
-  $delaunay_json = ENV['JSON'] != '0'
-end
 
 module MB::Geometry
-  # Pure Ruby Delaunay triangulation.
+  # Pure Ruby Delaunay triangulation.  Fast version (see delaunay.rb and
+  # delaunay_debug.rb).
   class Delaunay
     CROSS_PRODUCT_ROUNDING = 12
     INPUT_POINT_ROUNDING = 9
     RADIUS_SIGFIGS = 12
-
-    def self.loglog(s = nil)
-      return unless $delaunay_debug
-
-      s = yield if block_given?
-      STDERR.puts "#{' ' * caller.length}#{s}"
-      unless s.include?('Writing JSON')
-        @@log_msg = s.gsub(/\e\[[0-9;]*[^0-9;]/, '')
-        save_json
-      end
-    end
-
-    def self.save_json
-      return unless $delaunay_debug && $delaunay_json
-
-      @@instance ||= nil
-      @@instance&.save_json_internal(log: @@log_msg)
-    end
-
-    def self.set_instance(d)
-      @@instance = d
-    end
 
     class Hull
       extend Forwardable
@@ -73,12 +48,6 @@ module MB::Geometry
       #
       # Called HULL in Lee and Schachter (extended to return both tangents).
       def tangents(right)
-        if self.rightmost > right.leftmost
-          raise "Rightmost point on left-side hull #{self} is to the right of leftmost point on right-side hull #{right}"
-        end
-
-        raise "Cannot find tangents for empty hulls" if self.count == 0 || right.count == 0
-
         left = self
 
         max_count = left.count + right.count
@@ -107,8 +76,6 @@ module MB::Geometry
           end
         end
 
-        raise "BUG: No lower tangent could be found" if lower.nil?
-
         # Walk counterclockwise around left, clockwise around right, until the
         # next point on both sides is to the right of X->Y, showing that X->Y is
         # the highest segment.
@@ -133,8 +100,6 @@ module MB::Geometry
           end
         end
 
-        raise "BUG: No upper tangent could be found" if upper.nil?
-
         return lower, upper
       end
     end
@@ -154,10 +119,6 @@ module MB::Geometry
         @first = nil
         @hull = nil
         self.name = nil
-      end
-
-      def name
-        @name
       end
 
       # Sets a name for this point (+n+ will be prefixed by the point's index).
@@ -192,7 +153,7 @@ module MB::Geometry
       end
 
       def to_s
-        "#{name}: [#{@x}, #{@y}]{#{@neighbors.length}}"
+        "#{@idx}: [#{@x}, #{@y}]{#{@neighbors.length}}"
       end
 
       def inspect
@@ -221,17 +182,13 @@ module MB::Geometry
       # https://en.wikipedia.org/wiki/Cross_product#Computational_geometry
       # https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
       def right_of?(p1, p2)
-        cross = cross(p1, p2)
-        Delaunay.loglog { "Is #{self} to the right of #{p1} -> #{p2}?  cross: #{cross} -> #{cross < 0}" }
-        cross < 0
+        cross(p1, p2) < 0
       end
 
       # Returns true if this point is to the left of the ray from +p1+ to +p2+.
       # Returns false if right or collinear.
       def left_of?(p1, p2)
-        cross = cross(p1, p2)
-        Delaunay.loglog { "Is #{self} to the left of #{p1} -> #{p2}?  cross: #{cross} -> #{cross > 0}" }
-        cross > 0
+        cross(p1, p2) > 0
       end
 
       def neighbors
@@ -285,8 +242,6 @@ module MB::Geometry
 
       # Adds point +p+ to the correct location in this point's adjacency lists.
       def add(p, set_first = false)
-        Delaunay.loglog { "\e[33mInserting \e[1m#{p}\e[22m into adjacency list of \e[1m#{self}\e[0m" }
-
         angle = self.angle(p)
         prior_idx = @neighbors.bsearch_index { |n| self.angle(n) >= angle }
 
@@ -299,8 +254,6 @@ module MB::Geometry
 
       # Removes point +p+ from this point's adjacency lists.
       def remove(p)
-        raise "Point #{p} is not a neighbor of #{self}" unless @neighbors.include?(p)
-
         @first = counterclockwise(@first) if @first.equal?(p)
         @first = nil if @first.equal?(p)
         @neighbors.delete(p)
@@ -318,14 +271,10 @@ module MB::Geometry
     # MB::Geometry::Delaunay::Point#neighbors method to access the neighbor graph after
     # construction.
     def initialize(points)
-      Delaunay.set_instance(self)
-
       @points = points.map.with_index { |(x, y, name), idx|
         Point.new(x, y, idx).tap { |p| p.name = name if name }
       }
       @sorted_points = @points.sort # Point implements <=> to sort by X and break ties by Y
-      @outside_test = nil
-      @tangents = nil
       triangulate(@sorted_points)
     end
 
@@ -357,21 +306,7 @@ module MB::Geometry
     end
 
     def to_h
-      { points: self.to_a, outside_test: @outside_test, tangents: @tangents }
-    end
-
-    # Call Delaunay.save_json instead.
-    def save_json_internal(h = {})
-      @json_idx ||= 0
-
-      @last_json ||= nil
-      this_json = h.merge(to_h)
-      if @last_json != this_json
-        Delaunay.loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
-        File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))
-        @json_idx += 1
-        @last_json = this_json
-      end
+      { points: self.to_a }
     end
 
     def triangles
@@ -404,29 +339,18 @@ module MB::Geometry
     #
     # Analogous to INSERT(A, B) from Lee and Schachter.
     def join(p1, p2, set_first)
-      Delaunay.loglog { "\e[32mConnecting \e[1m#{p1}\e[22m to \e[1m#{p2}\e[0m" }
       p1.add(p2, set_first)
       p2.add(p1)
-
-      Delaunay.save_json
     end
 
     # Analogous to DELETE(A, B) from Lee and Schachter.
     def unjoin(p1, p2, whence = nil)
-      Delaunay.loglog { "\e[31mDisconnecting \e[1m#{p1}\e[22m from \e[1m#{p2}\e[22m #{whence}\e[0m" }
-
       p1.remove(p2)
       p2.remove(p1)
-
-      Delaunay.save_json
     end
 
     # Pass a sorted list of points.
     def triangulate(points)
-      Delaunay.loglog { "\e[34mTriangulating \e[1m#{points.length}\e[22m points\e[0m" }
-
-      Delaunay.save_json
-
       case points.length
       when 0
         Hull.new([])
@@ -448,7 +372,6 @@ module MB::Geometry
         # Connect points to each other in counterclockwise order
         cross = p2.cross(p1, p3)
         if cross < 0
-          Delaunay.loglog { " cross: #{cross}; linking p1 #{p1} -> p2 #{p2} -> p3 #{p3}" }
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
           p2.add(p3)
@@ -458,7 +381,6 @@ module MB::Geometry
           p2.add(p1)
           p1.add(p3)
         elsif cross > 0
-          Delaunay.loglog { " cross: #{cross}; linking p1 #{p1} -> p3 #{p3} -> p2 #{p2}" }
           # p2 is left of p1->p3; put p2 on the top
           p1.add(p3)
           p3.add(p2)
@@ -469,7 +391,6 @@ module MB::Geometry
           p3.add(p1)
         else
           # p2 is on a line between p1 and p3; link left-to-right
-          Delaunay.loglog { " cross: #{cross}; linking p1 #{p1} -> p2 #{p2} ; linking p2 -> p3 #{p3}" }
           p1.add(p2)
           p2.add(p3)
 
@@ -485,17 +406,8 @@ module MB::Geometry
         left = points[0...n]
         right = points[n..-1]
 
-        Delaunay.loglog { "\e[36mSplitting into \e[1m#{left.length}\e[22m and \e[1m#{right.length}\e[22m points...\e[0m" }
-
         merge(triangulate(left), triangulate(right))
       end
-
-    rescue => e
-      Delaunay.loglog { "\e[31mTriangulation of #{points.length} failed: \e[1m#{e}\e[0m" }
-      raise
-
-    ensure
-      Delaunay.save_json
     end
 
     # Merges two convex hulls that contain locally complete Delaunay
@@ -503,32 +415,7 @@ module MB::Geometry
     #
     # Called MERGE in Lee and Schachter.
     def merge(left, right)
-      Delaunay.loglog { "\e[35mMerging \e[1m#{left.length}\e[22m points on the left with \e[1m#{right.length}\e[22m points on the right\e[0m" }
-
       (l_l, l_r), (u_l, u_r) = left.tangents(right)
-
-      if $delaunay_debug
-        @tangents = [
-          [[l_l.x, l_l.y], [l_r.x, l_r.y]],
-          [[u_l.x, u_l.y], [u_r.x, u_r.y]],
-        ]
-
-        Delaunay.loglog { "\e[36mTangents are \e[1m#{l_l} -> #{l_r}\e[22m and \e[1m#{u_l} -> #{u_r}\e[0m" }
-      end
-
-      # TODO a name stack would be better, so U_R can become R2 and go back to U_R
-      if $delaunay_debug
-        l_l.name = 'L_L'
-        l_r.name = 'L_R'
-        u_l.name = 'U_L'
-        u_r.name = 'U_R'
-
-        Delaunay.save_json
-
-        l_l.name = 'L'
-        l_r.name = 'R'
-        Delaunay.save_json
-      end
 
       l = l_l
       r = l_r
@@ -545,62 +432,30 @@ module MB::Geometry
         join(l, r, l == l_l && r == l_r)
 
         r1 = r.clockwise(l)
-        r1.name = 'R1'
         if r1.left_of?(l, r)
-          r2&.name = nil
           r2 = r.clockwise(r1)
-          r2.name = 'R2'
-
-          Delaunay.save_json
 
           until outside?(r1, l, r, r2)
             unjoin(r, r1, 'from the right')
-
-            r1&.name = nil
-            r2&.name = nil
-
             r1 = r2
-            r1.name = 'R1'
-
             r2 = r.clockwise(r1)
-            r2.name = 'R2'
-
-            Delaunay.save_json
           end
         else
           a = true
         end
 
-        l1&.name = nil
         l1 = l.counterclockwise(r)
-        l1.name = 'L1'
         if l1.right_of?(r, l)
-          l2&.name = nil
           l2 = l.counterclockwise(l1)
-          l2.name = 'L2'
-
-          Delaunay.save_json
 
           until outside?(l, r, l1, l2)
             unjoin(l, l1, 'from the left')
-
-            l1&.name = nil
-            l2&.name = nil
-
             l1 = l2
-            l1.name = 'L1'
-
             l2 = l.counterclockwise(l1)
-            l2.name = 'L2'
-
-            Delaunay.save_json
           end
         else
           b = true
         end
-
-        l&.name = nil
-        r&.name = nil
 
         if a
           l = l1
@@ -611,11 +466,6 @@ module MB::Geometry
         else
           l = l1
         end
-
-        l.name = 'L'
-        r.name = 'R'
-
-        Delaunay.save_json
       end
 
       # Add the top tangent; this seems to be omitted from Lee and Schachter,
@@ -623,18 +473,8 @@ module MB::Geometry
       # and runs one final iteration.
       join(u_r, u_l, true)
 
-      Delaunay.save_json
+      left.add_hull(right)
 
-      left.points.each do |p|
-        p.name = nil
-      end
-      right.points.each do |p|
-        p.name = nil
-      end
-
-      @tangents = nil
-
-      left.add_hull(right).tap { Delaunay.save_json }
     rescue => e
       f = "/tmp/hull_#{left.hull_id}_#{right.hull_id}.json"
       File.write(
@@ -652,29 +492,15 @@ module MB::Geometry
     #
     # Analogous to QTEST(H, I, J, K) in Lee and Schachter.
     def outside?(p1, p2, p3, q)
-      x, y, rsquared = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+      return true if q.equal?(p1) || q.equal?(p2) || q.equal?(p3)
 
-      @outside_test = { points: [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]], query: [q.x, q.y], x: x, y: y, r: Math.sqrt(rsquared) }
-      Delaunay.loglog { "Is #{q} outside the circumcircle of #{p1}, #{p2}, #{p3}? " }
-      Delaunay.save_json
+      x, y, rsquared = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
 
       dx = q.x - x
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
-      outside = q.equal?(p1) || q.equal?(p2) || q.equal?(p3) || MB::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::M.sigfigs(rsquared, RADIUS_SIGFIGS)
-
-      close_call = MB::M.sigfigs(dsquared, 3) >= MB::M.sigfigs(rsquared, 3) || dsquared.round(4) >= rsquared.round(4)
-
-      Delaunay.loglog {
-        "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} Outside: \e[1m#{outside}\e[22m Close: \e[1m#{close_call}\e[0m"
-      }
-
-      Delaunay.save_json
-      @outside_test = nil
-      Delaunay.save_json
-
-      outside
+      MB::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::M.sigfigs(rsquared, RADIUS_SIGFIGS)
     end
 
     public

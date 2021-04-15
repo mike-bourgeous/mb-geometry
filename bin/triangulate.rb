@@ -9,12 +9,7 @@ require 'json'
 require 'benchmark'
 
 $:.unshift(File.join(__dir__, '..', 'lib'))
-
-if $DEBUG || ENV['DEBUG']
-  require 'mb/geometry/delaunay_debug'
-else
-  require 'mb/geometry/delaunay'
-end
+require 'mb/geometry/delaunay'
 
 if ARGV.length < 1
   puts "\nUsage: \e[1m#{$0}\e[0m file_with_points_array.json (or .yml) [more files...]"
