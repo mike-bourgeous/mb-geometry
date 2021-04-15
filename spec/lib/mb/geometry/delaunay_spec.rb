@@ -271,6 +271,7 @@ RSpec.describe(MB::Geometry::Delaunay) do
             begin
               expect(p1.counterclockwise(p)).to eq(p2)
             rescue Exception => e # XXX
+              puts e
               require 'pry-byebug'; binding.pry
               raise
             end
