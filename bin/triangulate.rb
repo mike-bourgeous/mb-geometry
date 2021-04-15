@@ -69,9 +69,9 @@ until ARGV.empty?
 end
 
 if errors.any?
-  puts "\n\n\e[1mErrors:\e[0m"
+  STDERR.puts "\n\n\e[1mErrors:\e[0m"
   errors.each do |filename, error|
-    puts "  \e[1;36m#{filename}\e[0m => \e[31m#{error}"
+    STDERR.puts "  \e[1;36m#{filename}\e[0m => \e[31m#{error}"
   end
   exit 1
 end
