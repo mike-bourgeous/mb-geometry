@@ -141,7 +141,6 @@ RSpec.describe MB::Geometry do
 
   pending '.dot'
   pending '.clip_segment'
-  pending '.regular_polygon'
   pending '.distance_to_line'
   pending '.perpendicular_bisector'
   pending '.circumcenter'
