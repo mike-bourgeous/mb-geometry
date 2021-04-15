@@ -379,7 +379,7 @@ RSpec.describe(MB::Geometry::Delaunay) do
     end
   end
 
-  let (:trivial3) {
+  let(:trivial3) {
     MB::Geometry::Delaunay.new([
       [-1, -1],
       [1, -1],
@@ -387,13 +387,67 @@ RSpec.describe(MB::Geometry::Delaunay) do
     ])
   }
 
-  let (:trivial4) {
+  let(:trivial4) {
     MB::Geometry::Delaunay.new([
       [-1, -1],
       [1, -1],
       [0.5, 0],
       [1, 1]
     ])
+  }
+
+  let(:hline) {
+    MB::Geometry::Delaunay.new([
+      [-3, 1],
+      [-2, 1],
+      [-1.5, 1],
+      [2, 1],
+      [5, 1],
+    ])
+  }
+
+  let(:vline) {
+    MB::Geometry::Delaunay.new([
+      [0, -2],
+      [0, 2],
+      [0, -3],
+      [0, 5],
+      [0, -1.5],
+    ])
+  }
+
+  let(:hvlines) {
+    MB::Geometry::Delaunay.new(
+      MB::Geometry::Generators.generate(
+        generator: :multi,
+        generators: [
+          {
+            generator: :segment,
+            count: 4,
+            from: [-5, 0],
+            to: [-4, 0],
+          },
+          {
+            generator: :segment,
+            count: 4,
+            from: [-3.5, -3],
+            to: [-3.5, 3],
+          },
+          {
+            generator: :segment,
+            count: 4,
+            from: [-2, 0],
+            to: [2, 0],
+          },
+          {
+            generator: :segment,
+            count: 4,
+            from: [3, -1],
+            to: [3, 1],
+          },
+        ]
+      ).map { |p| p.values_at(:x, :y) }
+    )
   }
 
   describe '#points' do
@@ -463,10 +517,26 @@ RSpec.describe(MB::Geometry::Delaunay) do
     end
   end
 
+  describe '#triangles' do
+    it 'does not return any triangles for a vertical line' do
+      expect(vline.triangles.length).to eq(0)
+    end
+
+    it 'does not return any triangles for a horizontal line' do
+      expect(hline.triangles.length).to eq(0)
+    end
+
+    it 'returns one triangle for a simple triangle' do
+      expect(trivial3.triangles.length).to eq(1)
+    end
+
+    it 'returns multiple triangles for horizontal and vertical line groups' do
+      expect(hvlines.triangles.length).to be > 1
+    end
+  end
+
+  # Some of these cases are handled by the triangulate.rb test
   pending 'difficult/pathological cases'
-  pending 'a horizontal line'
-  pending 'a vertical line'
-  pending 'alternating sequences of N horizontal and vertical groups'
   pending 'sequences of spaced horizontal groups'
   pending 'sequences of spaced vertical groups'
   pending 'regular polygons (circular)'
