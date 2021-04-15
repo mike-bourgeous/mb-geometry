@@ -1,3 +1,7 @@
+require 'csv'
+require 'json'
+require 'yaml'
+
 module MB
   module Geometry
     # Methods for generating lists of points (random points, polygons, etc.).

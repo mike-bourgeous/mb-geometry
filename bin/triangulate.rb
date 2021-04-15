@@ -9,33 +9,22 @@ require 'json'
 require 'benchmark'
 
 $:.unshift(File.join(__dir__, '..', 'lib'))
-require 'mb/geometry/delaunay'
+require 'mb/geometry'
 
 if ARGV.length < 1
-  puts "\nUsage: \e[1m#{$0}\e[0m file_with_points_array.json (or .yml) [more files...]"
+  puts "\nUsage: \e[1m#{$0}\e[0m file_with_points_array.json (or .yml or .csv) [more files...]"
   puts "\nJSON or YML should be of the form [ { \"x\": 0, \"y\": 0 }, ... ]"
+  puts "CSV should be of the form [[ x, y, name ], [ x, y, name ] ... ]\n\n"
   exit 1
 end
 
 errors = {}
 
 until ARGV.empty?
-  # TODO: Merge with Geometry::Voronoi.generate_from_file when this project is merged with that one
   puts "Triangulating \e[1;36m#{ARGV[0]}\e[0m"
 
   begin
-    case File.extname(ARGV[0])
-    when '.json'
-      points = JSON.parse(File.read(ARGV[0]), symbolize_names: true)
-
-    when '.yaml', '.yml'
-      points = YAML.load(File.read(ARGV[0]), symbolize_names: true)
-
-    else
-      raise "Unknown extension #{File.extname(ARGV[0])}"
-    end
-
-    points = points[:points] if points.is_a?(Hash)
+    points = MB::Geometry::Generators.generate_from_file(ARGV[0])
 
     t = nil
     elapsed_triangulate = Benchmark.realtime do
