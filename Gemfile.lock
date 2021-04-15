@@ -1,8 +1,10 @@
 GIT
   remote: https://github.com/mike-bourgeous/mb-math.git
-  revision: 6f7a86c376b74eef394853d1430e5934995e34dd
+  revision: 7fa3f9cd17b969226961be38cb6e82d40bcfb49f
   specs:
-    mb-math (0.0.0.usegit)
+    mb-math (0.0.1.usegit)
+      cmath (~> 1.0.0)
+      numo-narray (~> 0.9.1)
 
 PATH
   remote: .
@@ -15,10 +17,12 @@ GEM
   remote: https://rubygems.org/
   specs:
     GeoRuby (1.3.4)
+    cmath (1.0.0)
     coderay (1.1.3)
     diff-lcs (1.4.4)
     libxml-ruby (3.2.1)
     method_source (1.0.0)
+    numo-narray (0.9.1.9)
     pry (0.14.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
