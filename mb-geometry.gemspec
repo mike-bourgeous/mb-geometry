@@ -27,4 +27,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'rubyvor', '0.1.4'
 
   spec.add_development_dependency 'pry'
+  spec.add_development_dependency 'rspec', '~> 3.10.0'
 end
