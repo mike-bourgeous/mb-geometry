@@ -1,5 +1,7 @@
 require "mb/geometry/version"
 
+require 'matrix'
+
 module MB
   # Inefficient algorithms for some basic geometric operations.
   module Geometry
