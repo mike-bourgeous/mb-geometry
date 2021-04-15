@@ -9,6 +9,6 @@ require 'json'
 require 'benchmark'
 
 $:.unshift(File.join(__dir__, '..', 'lib'))
-require 'mb/delaunay'
+require 'mb/geometry/delaunay'
 
 Pry.pry

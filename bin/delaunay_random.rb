@@ -10,7 +10,7 @@ require 'benchmark'
 require 'json'
 
 $:.unshift(File.join(__dir__, '..', 'lib'))
-require 'mb/delaunay'
+require 'mb/geometry/delaunay'
 
 random = Random.new(ENV['RANDOM_SEED']&.to_i || 0)
 
@@ -22,7 +22,7 @@ points = count.times.map {
 t = nil
 
 begin
-  t = MB::Delaunay.new(points)
+  t = MB::Geometry::Delaunay.new(points)
 rescue => e
   puts "\n\n\e[31mError in triangulation: \e[1m#{e}\e[0m"
 

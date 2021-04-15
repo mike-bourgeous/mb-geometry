@@ -11,7 +11,7 @@ require 'benchmark'
 require 'json'
 
 $:.unshift(File.join(__dir__, '..', 'lib'))
-require 'mb/delaunay'
+require 'mb/geometry/delaunay'
 
 # TODO: Add to specs as well
 count = ARGV[0]&.to_i || 100
@@ -24,7 +24,7 @@ points << [1, 0]
 t = nil
 
 begin
-  t = MB::Delaunay.new(points)
+  t = MB::Geometry::Delaunay.new(points)
 rescue => e
   puts "\n\n\e[31mError in triangulation: \e[1m#{e}\e[0m"
 

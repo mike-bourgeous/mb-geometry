@@ -10,7 +10,7 @@ require 'benchmark'
 require 'json'
 
 $:.unshift(File.join(__dir__, '..', 'lib'))
-require 'mb/delaunay'
+require 'mb/geometry/delaunay'
 
 random = Random.new(ENV['RANDOM_SEED']&.to_i || 0)
 
@@ -40,7 +40,7 @@ begin
     elapsed[c] = {
       base: Benchmark.realtime do
         100.times do
-          v = MB::Delaunay.new(points)
+          v = MB::Geometry::Delaunay.new(points)
         end
       end,
       triangles: Benchmark.realtime do

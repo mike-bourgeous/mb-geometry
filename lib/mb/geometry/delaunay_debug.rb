@@ -14,7 +14,7 @@ end
 # JSON=0 to disable json saving
 $delaunay_json = ENV['JSON'] != '0'
 
-module MB
+module MB::Geometry
   # Pure Ruby Delaunay triangulation.
   class Delaunay
     CROSS_PRODUCT_ROUNDING = 12
@@ -201,7 +201,7 @@ module MB
       end
 
       def inspect
-        "#<MB::Delaunay::Point:#{__id__} #{to_s}"
+        "#<MB::Geometry::Delaunay::Point:#{__id__} #{to_s}"
       end
 
       # Returns an angle from self to +p+ from -PI to PI starting at the
@@ -319,8 +319,8 @@ module MB
     # Initializes a triangulation of the given Array of +points+ of the
     # following form: [ [x1, y1], [x2, y2], ... ].
     #
-    # Use #points to retrieve an Array of MB::Delaunay::Point objects and the
-    # MB::Delaunay::Point#neighbors method to access the neighbor graph after
+    # Use #points to retrieve an Array of MB::Geometry::Delaunay::Point objects and the
+    # MB::Geometry::Delaunay::Point#neighbors method to access the neighbor graph after
     # construction.
     def initialize(points)
       Delaunay.set_instance(self)

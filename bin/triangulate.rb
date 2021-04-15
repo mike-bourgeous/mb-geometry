@@ -11,9 +11,9 @@ require 'benchmark'
 $:.unshift(File.join(__dir__, '..', 'lib'))
 
 if $DEBUG || ENV['DEBUG']
-  require 'mb/delaunay_debug'
+  require 'mb/geometry/delaunay_debug'
 else
-  require 'mb/delaunay'
+  require 'mb/geometry/delaunay'
 end
 
 if ARGV.length < 1
@@ -44,7 +44,7 @@ until ARGV.empty?
 
     t = nil
     elapsed_triangulate = Benchmark.realtime do
-      t = MB::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y], p[:name]] })
+      t = MB::Geometry::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y], p[:name]] })
     end
 
     tris = nil
@@ -53,7 +53,7 @@ until ARGV.empty?
     end
 
     circumcircles = tris.map { |t|
-      MB::Delaunay.circumcircle(t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y)
+      MB::Geometry::Delaunay.circumcircle(t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y)
     }
 
     puts "Triangulated \e[1m#{points.length}\e[0m points in \e[1m#{elapsed_triangulate}\e[0m seconds (\e[1m#{elapsed_triangles}\e[0ms for \e[1m#{tris.length}\e[0m triangles)"
