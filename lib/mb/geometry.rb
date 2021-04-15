@@ -1,6 +1,8 @@
-require "mb/geometry/version"
-
 require 'matrix'
+
+require 'mb/m'
+
+require_relative 'geometry/version'
 
 module MB
   # Inefficient algorithms for some basic geometric operations.
