@@ -291,8 +291,6 @@ module MB
           if anneal = spec[:anneal]
             raise "Anneal must be an Integer, if given" unless anneal.is_a?(Integer)
 
-            raise NotImplementedError, 'Need to bring MB::Geometry::Voronoi into mb-geometry'
-
             v = MB::Geometry::Voronoi.new(points)
 
             # TODO: Pass the bounding box into the final MB::Geometry::Voronoi if one is constructed?
