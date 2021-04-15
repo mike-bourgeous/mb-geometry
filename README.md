@@ -57,7 +57,7 @@ To use mb-geometry in your own Ruby projects, add this Git repo to your
 
 ```ruby
 # your-project/Gemfile
-gem 'mb-geometry', git: 'https://github.com/mike-bourgeous/mb-sound.git
+gem 'mb-geometry', git: 'https://github.com/mike-bourgeous/mb-geometry.git
 ```
 
 ## Examples
