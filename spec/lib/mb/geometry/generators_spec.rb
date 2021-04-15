@@ -200,5 +200,26 @@ RSpec.describe(MB::Geometry::Generators) do
     end
   end
 
-  pending '.generate_from_file'
+  describe '.generate_from_file' do
+    it 'can load a .yml file' do
+      file = File.expand_path('../../../../test_data/square.yml', __dir__)
+      points = MB::Geometry::Generators.generate_from_file(file)
+      expect(points.length).to eq(4)
+      expect(points[0][:color]).to eq([0.9, 0.3, 0.1])
+    end
+
+    it 'can load a .json file' do
+      file = File.expand_path('../../../../test_data/pentagon.json', __dir__)
+      points = MB::Geometry::Generators.generate_from_file(file)
+      expect(points.length).to eq(5)
+      expect(points[0][:name]).to eq('P1')
+    end
+
+    it 'can load a .csv file' do
+      file = File.expand_path('../../../../test_data/simple_csv_points.csv', __dir__)
+      points = MB::Geometry::Generators.generate_from_file(file)
+      expect(points.length).to eq(5)
+      expect(points[0][:name]).to eq('A')
+    end
+  end
 end
