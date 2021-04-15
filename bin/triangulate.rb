@@ -13,8 +13,9 @@ require 'mb/geometry'
 
 if ARGV.length < 1
   puts "\nUsage: \e[1m#{$0}\e[0m file_with_points_array.json (or .yml or .csv) [more files...]"
-  puts "\nJSON or YML should be of the form [ { \"x\": 0, \"y\": 0 }, ... ]"
-  puts "CSV should be of the form [[ x, y, name ], [ x, y, name ] ... ]\n\n"
+  puts "\nJSON or YML should be of the form [ { \"x\": 0, \"y\": 0 }, ... ]."
+  puts "JSON and YML can also use the MB::Geometry::Generators.generate_from_file syntax."
+  puts "CSV should be of the form [[ x, y, name ], [ x, y, name ] ... ].\n\n"
   exit 1
 end
 

@@ -65,10 +65,25 @@ gem 'mb-math', git: 'https://github.com/mike-bourgeous/mb-math.git'
 
 ### Area of a polygon
 
-```
+```ruby
 MB::Geometry.polygon_area([[0, 0], [1, 0], [1, 1], [0, 1]])
 # => 1.0
 ```
+
+### Delaunay triangulation
+
+#### Pure Ruby algorithm
+
+The `triangulate.rb` command prints each input point's neighbors and the final
+list of triangles in Ruby Hash syntax.
+
+```bash
+bin/triangulate.rb test_data/square.yml
+```
+
+#### Rubyvor gem algorithm
+
+TODO (after merging Voronoi code)
 
 ## Testing
 
