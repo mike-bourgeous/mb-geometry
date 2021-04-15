@@ -64,6 +64,141 @@ RSpec.describe(MB::Geometry::Generators) do
     end
   end
 
-  pending '.generate'
+  describe '.generate' do
+    it 'can generate a polygon' do
+      spec = {
+        generator: :polygon,
+        sides: 6,
+        radius: 2.0
+      }
+
+      points = MB::Geometry::Generators.generate(spec)
+
+      expect(points.length).to eq(6)
+      expect(points[0].values_at(:x, :y)).to eq([2, 0])
+    end
+
+    it 'can generate random points' do
+      spec = {
+        generator: :random,
+        count: 10000,
+        xmin: -5.0,
+        xmax: 3.0,
+        ymin: -4.0,
+        ymax: -1.0
+      }
+
+      points = MB::Geometry::Generators.generate(spec)
+
+      expect(points.length).to eq(10000)
+
+      x, y = points.map { |p| p.values_at(:x, :y) }.transpose
+
+      expect(x.min.round(2)).to eq(-5)
+      expect(x.max.round(2)).to eq(3)
+      expect(y.min.round(2)).to eq(-4)
+      expect(y.max.round(2)).to eq(-1)
+    end
+
+    it 'can use a random seed' do
+      spec1 = {
+        generator: :random,
+        count: 10,
+        seed: 1
+      }
+
+      spec2 = {
+        generator: :random,
+        count: 10,
+        seed: 2
+      }
+
+      points_1a = MB::Geometry::Generators.generate(spec1)
+      points_1b = MB::Geometry::Generators.generate(spec1)
+
+      points_2a = MB::Geometry::Generators.generate(spec2)
+      points_2b = MB::Geometry::Generators.generate(spec2)
+
+      # Verify contents are the same but object IDs differ with the same seed
+      expect(points_1a).to eq(points_1b)
+      expect(points_1a).not_to equal(points_1b)
+
+      expect(points_2a).to eq(points_2b)
+      expect(points_2a).not_to equal(points_2b)
+
+      # Verify contents differ when seeds differ
+      expect(points_1a).not_to eq(points_2a)
+    end
+
+    it 'can mix different generators together and apply names and colors' do
+      spec = {
+        generator: :multi,
+        generators: [
+          {
+            generator: :polygon,
+            sides: 5,
+          },
+          {
+            points: [[2, 2], [3, 5]]
+          }
+        ],
+        names: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+        colors: [
+          [1, 1, 1, 1],
+          [0.5, 1.0, 0.5, 1.0],
+        ],
+      }
+
+      points = MB::Geometry::Generators.generate(spec)
+      expect(points.count).to eq(7)
+      expect(points.last).to eq({x: 3, y: 5, name: 'G', color: [1, 1, 1, 1]})
+    end
+
+    describe ':anneal' do
+      let(:plain_spec) {
+        {
+          generator: :random,
+          count: 10,
+          seed: 1,
+        }
+      }
+
+      let(:annealed_spec) {
+        {
+          generator: :random,
+          count: 10,
+          seed: 1,
+          anneal: 5,
+        }
+      }
+
+      let(:plain_points) {
+        MB::Geometry::Generators.generate(plain_spec)
+      }
+
+      let(:annealed_points) {
+        MB::Geometry::Generators.generate(annealed_spec)
+      }
+
+      it 'can anneal points using the Voronoi partition' do
+        pending 'Need to copy over the Voronoi code for this to work'
+
+        expect(plain_points).not_to eq(annealed_points)
+      end
+
+      it 'preserves X and Y range' do
+        pending 'Need to copy over the Voronoi code for this to work'
+
+        x1, y1 = plain_points.map { |p| p.values_at(:x, :y) }.transpose
+        x2, y2 = annealed_points.map { |p| p.values_at(:x, :y) }.transpose
+
+        expect(x1.min.round(5)).to eq(x2.min.round(5))
+        expect(x1.max.round(5)).to eq(x2.max.round(5))
+        expect(y1.min.round(5)).to eq(y2.min.round(5))
+        expect(y1.max.round(5)).to eq(y2.max.round(5))
+      end
+    end
+  end
+
   pending '.generate_from_file'
 end

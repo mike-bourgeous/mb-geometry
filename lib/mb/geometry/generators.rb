@@ -139,6 +139,8 @@ module MB
             aspect = spec[:aspect] || 1.0
             raise "Aspect must be a Numeric for :polygon, if given" unless aspect.is_a?(Numeric)
 
+            # TODO: Maybe make rotation and translation post-generation transforms, like :anneal?
+
             rotate = spec[:rotate] || 0
             raise "Rotate must be a Numeric of degrees for :polygon, if given" unless rotate.is_a?(Numeric)
 
