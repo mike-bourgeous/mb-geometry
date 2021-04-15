@@ -62,7 +62,12 @@ gem 'mb-geometry', git: 'https://github.com/mike-bourgeous/mb-geometry.git
 
 ## Examples
 
-TODO
+### Area of a polygon
+
+```
+MB::Geometry.polygon_area([[0, 0], [1, 0], [1, 1], [0, 1]])
+# => 1.0
+```
 
 ## Testing
 
