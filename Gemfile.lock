@@ -1,12 +1,11 @@
 GIT
-  remote: https://github.com/mike-bourgeous/mb-sound
-  revision: a2d50e31696bc5a021d113b38f8b33a65fc0b0ff
+  remote: https://github.com/mike-bourgeous/mb-math
+  revision: b9d1c40856153f98960d09a01e3ba05b4998ed1a
+  branch: copy-from-other-repos
   specs:
-    mb-sound (0.1.1.usegit)
+    mb-math (0.0.1.usegit)
       cmath (~> 1.0.0)
-      midi-nibbler (~> 0.2.4)
-      numo-narray (~> 0.9.1.8)
-      numo-pocketfft (~> 0.2.2)
+      numo-narray (~> 0.9.1)
 
 GEM
   remote: https://rubygems.org/
@@ -16,12 +15,7 @@ GEM
     coderay (1.1.3)
     diff-lcs (1.4.4)
     method_source (1.0.0)
-    midi-message (0.4.9)
-    midi-nibbler (0.2.4)
-      midi-message (~> 0.4, >= 0.4.4)
     numo-narray (0.9.1.9)
-    numo-pocketfft (0.2.2)
-      numo-narray (~> 0.9.1)
     pry (0.14.0)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -47,7 +41,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  mb-sound!
+  mb-math!
   pry
   pry-byebug
   rspec

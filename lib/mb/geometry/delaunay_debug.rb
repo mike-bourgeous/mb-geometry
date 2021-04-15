@@ -2,7 +2,7 @@ require 'matrix'
 require 'forwardable'
 require 'set'
 require 'json'
-require 'mb/sound'
+require 'mb-math'
 
 # DEBUG=1 to enable debugging
 if $DEBUG || ENV['DEBUG']
@@ -667,9 +667,9 @@ module MB::Geometry
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
-      outside = q.equal?(p1) || q.equal?(p2) || q.equal?(p3) || MB::Sound::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::Sound::M.sigfigs(rsquared, RADIUS_SIGFIGS)
+      outside = q.equal?(p1) || q.equal?(p2) || q.equal?(p3) || MB::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::M.sigfigs(rsquared, RADIUS_SIGFIGS)
 
-      close_call = MB::Sound::M.sigfigs(dsquared, 3) >= MB::Sound::M.sigfigs(rsquared, 3) || dsquared.round(4) >= rsquared.round(4)
+      close_call = MB::M.sigfigs(dsquared, 3) >= MB::M.sigfigs(rsquared, 3) || dsquared.round(4) >= rsquared.round(4)
 
       Delaunay.loglog {
         "\e[36m X: #{x.inspect} Y: #{y.inspect} R^2: #{rsquared.inspect} D^2: #{dsquared.inspect} Outside: \e[1m#{outside}\e[22m Close: \e[1m#{close_call}\e[0m"

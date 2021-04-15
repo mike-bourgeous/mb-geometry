@@ -9,4 +9,4 @@ gem 'pry'
 gem 'pry-byebug'
 gem 'ruby-prof'
 
-gem 'mb-sound', github: 'mike-bourgeous/mb-sound'
+gem 'mb-math', github: 'mike-bourgeous/mb-math', branch: 'copy-from-other-repos'

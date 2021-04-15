@@ -11,6 +11,11 @@ help resolve ambiguities or misunderstandings I have from Lee and Schachter.
 This website describes a similar divide and conquer algorithm from 1985 by
 Guibas and Stolfi, which the ACM still charges for and thus I have not read.
 
+## Notes about this repo
+
+There are two copies of the Delaunay code, one with detailed debugging, one
+with minimal debugging for better performance.
+
 ## Questions about L&S
 
 - The adjacency list is specified as being a circular doubly-linked list, which

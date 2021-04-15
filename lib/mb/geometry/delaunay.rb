@@ -2,7 +2,7 @@ require 'matrix'
 require 'forwardable'
 require 'set'
 require 'json'
-require 'mb/sound'
+require 'mb-math'
 
 
 module MB::Geometry
@@ -499,7 +499,7 @@ module MB::Geometry
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
-      MB::Sound::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::Sound::M.sigfigs(rsquared, RADIUS_SIGFIGS)
+      MB::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::M.sigfigs(rsquared, RADIUS_SIGFIGS)
     end
 
     public
