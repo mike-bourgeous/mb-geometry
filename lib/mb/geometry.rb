@@ -275,3 +275,4 @@ module MB
 end
 
 require_relative 'geometry/generators'
+require_relative 'geometry/delaunay'

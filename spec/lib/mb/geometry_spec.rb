@@ -86,12 +86,12 @@ RSpec.describe MB::Geometry do
     end
 
     it 'can create lines with positive slope' do
-      a, b, c = MB::Geometry.segment_to_line(5, 5, 7, 6)
+      a, b, _ = MB::Geometry.segment_to_line(5, 5, 7, 6)
       expect(-a.to_f / b).to eq(0.5)
     end
 
     it 'can create lines with negative slope' do
-      a, b, c = MB::Geometry.segment_to_line(5, 5, 7, 4)
+      a, b, _ = MB::Geometry.segment_to_line(5, 5, 7, 4)
       expect(-a.to_f / b).to eq(-0.5)
     end
 
