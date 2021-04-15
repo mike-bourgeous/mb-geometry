@@ -1,9 +1,10 @@
 # Delaunay triangulation in pure Ruby
 
-Due to some odd bugs in Rubyvor, I'm trying to write a pure Ruby implementation
-of a Delaunay triangulation.  I am using the 1980 algorithm from D.T. Lee and
-B.J. Schachter as a reference, but several implementation details are unclear,
-so I am changing a few things to use Ruby primitives instead.
+In order to better understand how Voronoi diagrams work, I'm trying to write a
+pure Ruby implementation of a Delaunay triangulation.  I am using the 1980
+algorithm from D.T. Lee and B.J. Schachter as a reference, but several
+implementation details are unclear, so I am changing a few things to use Ruby
+primitives instead.
 
 I am also referring to a website by Samuel Peterson (linked from Wikipedia) to
 help resolve ambiguities or misunderstandings I have from Lee and Schachter.
