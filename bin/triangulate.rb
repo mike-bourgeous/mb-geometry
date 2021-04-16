@@ -56,7 +56,7 @@ until ARGV.empty?
     elapsed_circumcircles = Benchmark.realtime do
       circumcircles = tris.map { |t|
         raise "T is not 6" unless t.length == 6
-        MB::Geometry::Delaunay.circumcircle(*t)
+        MB::Geometry.circumcircle(*t)
       }
     end
 
