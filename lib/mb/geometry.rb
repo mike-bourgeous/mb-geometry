@@ -38,8 +38,6 @@ module MB
       # intersection exists.  Returns nil if the lines are coincident or there is
       # no intersection.
       def line_intersection(line1, line2)
-        line1 = line1[1..3] if :l == line1[0]
-        line2 = line2[1..3] if :l == line2[0]
         a, b, c = line1
         d, e, f = line2
 
@@ -248,13 +246,16 @@ module MB
       end
 
       # Returns the circumcircle of the triangle defined by the given three
-      # points as [x, y, r].  Returns nil if the points are collinear.
+      # points as [x, y, rsquared].  Returns nil if the points are collinear.
       def circumcircle(x1, y1, x2, y2, x3, y3)
         x, y = circumcenter(x1, y1, x2, y2, x3, y3)
         return nil if x.nil? || y.nil?
 
-        r = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2)
-        [x, y, r]
+        dx = x - x1
+        dy = y - y1
+        rsquared = dx * dx + dy * dy
+
+        [x, y, rsquared]
       end
 
       # Returns the average of all of the given points.  Each point should have
@@ -277,3 +278,4 @@ end
 
 require_relative 'geometry/generators'
 require_relative 'geometry/delaunay'
+require_relative 'geometry/voronoi'

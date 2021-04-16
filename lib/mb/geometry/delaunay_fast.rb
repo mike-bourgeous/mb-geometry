@@ -494,82 +494,13 @@ module MB::Geometry
     def outside?(p1, p2, p3, q)
       return true if q.equal?(p1) || q.equal?(p2) || q.equal?(p3)
 
-      x, y, rsquared = Delaunay.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+      x, y, rsquared = MB::Geometry.circumcircle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
 
       dx = q.x - x
       dy = q.y - y
       dsquared = dx * dx + dy * dy
 
       MB::M.sigfigs(dsquared, RADIUS_SIGFIGS) >= MB::M.sigfigs(rsquared, RADIUS_SIGFIGS)
-    end
-
-    public
-
-    # Temporarily copied here from my Geometry class in another project, to be
-    # merged eventually.
-    # Returns the circumcenter of the triangle defined by the given three
-    # points as [x, y].  Returns nil if the points are collinear.
-    #
-    # The circumcenter of a polygon is the center of the circle that passes
-    # through all the points of the polygon.  See also #circumcircle.
-    def self.circumcenter(x1, y1, x2, y2, x3, y3)
-      b1 = perpendicular_bisector(x1, y1, x2, y2)
-      b2 = perpendicular_bisector(x2, y2, x3, y3)
-
-      x, y = line_intersection(b1, b2)
-      return nil if x.nil? || y.nil?
-
-      [x, y]
-    end
-
-    # Temporarily copied here from my Geometry class in another project, to be
-    # merged eventually.
-    # Returns the circumcircle of the triangle defined by the given three
-    # points as [x, y, rsquared].  Returns nil if the points are collinear.
-    def self.circumcircle(x1, y1, x2, y2, x3, y3)
-      x, y = circumcenter(x1, y1, x2, y2, x3, y3)
-      return nil unless x
-
-      dx = x - x1
-      dy = y - y1
-      rsquared = dx * dx + dy * dy
-      [x, y, rsquared]
-    end
-
-    # Temporarily copied here from my Geometry class in another project, to be
-    # merged eventually.
-    # Returns a line that is the perpendicular bisector of the given segment as
-    # [a, b, c], where a * x + b * y = c.
-    #
-    # Based on the derivation from https://math.stackexchange.com/a/2079662
-    def self.perpendicular_bisector(x1, y1, x2, y2)
-      [
-        x2 - x1,
-        y2 - y1,
-        0.5 * (x2 * x2 - x1 * x1 + y2 * y2 - y1 * y1)
-      ]
-    end
-
-    # Temporarily copied here from my Geometry class in another project, to be
-    # merged eventually.
-    # Finds the line intersection, if any, between two lines given coordinates
-    # in the form used by rubyvor (either [a, b, c] or [:l, a, b, c], using
-    # the formula ax + by = c).  Returns an array of [x, y] if a single
-    # intersection exists.  Returns nil if the lines are coincident or there is
-    # no intersection.
-    def self.line_intersection(line1, line2)
-      a, b, c = line1
-      d, e, f = line2
-
-      denom = (b * d - a * e).to_f
-
-      # Detect coincident and parallel lines
-      return nil if denom == 0
-
-      x = (b * f - c * e) / denom
-      y = (c * d - a * f) / denom
-
-      [x, y]
     end
   end
 end

@@ -63,6 +63,30 @@ gem 'mb-math', git: 'https://github.com/mike-bourgeous/mb-math.git'
 
 ## Examples
 
+Check out all of the scripts in `bin/`; they usually have a header comment
+describing what they do.
+
+### Generate SVG of a Voronoi partition
+
+From the shell:
+
+```bash
+bin/voronoi_to_svg.rb test_data/pentagon.json /tmp/pentagon.svg
+```
+
+From code:
+
+```ruby
+require 'mb-geometry'
+# The Hash must be inside an Array to prevent it being interpreted as keyword args
+# Rotation is in degrees
+v = MB::Geometry::Voronoi.new([{ generator: :polygon, sides: 5, rotate: 30 }]) ; nil
+v.save_svg('/tmp/pentagon_from_code.svg')
+
+# You can save the Delaunay triangulation instead:
+v.save_delaunay_svg('/tmp/pentagon_delaunay.svg')
+```
+
 ### Area of a polygon
 
 ```ruby
@@ -78,12 +102,14 @@ The `triangulate.rb` command prints each input point's neighbors and the final
 list of triangles in Ruby Hash syntax.
 
 ```bash
-bin/triangulate.rb test_data/square.yml
+DELAUNAY_ENGINE=delaunay bin/triangulate.rb test_data/square.yml
 ```
 
 #### Rubyvor gem algorithm
 
-TODO (after merging Voronoi code)
+```bash
+DELAUNAY_ENGINE=rubyvor bin/triangulate.rb test_data/square.yml
+```
 
 ## Testing
 
@@ -105,6 +131,8 @@ This project is released under a 2-clause BSD license.  See the LICENSE file.
 TODO
 
 ### References
+
+See README-Delaunay.md
 
 TODO
 

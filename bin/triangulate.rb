@@ -3,7 +3,7 @@
 require 'bundler/setup'
 
 require 'pry'
-require 'pry-byebug'
+# Uncomment if debugging --- require 'pry-byebug'
 
 require 'json'
 require 'benchmark'
@@ -11,7 +11,7 @@ require 'benchmark'
 $:.unshift(File.join(__dir__, '..', 'lib'))
 require 'mb/geometry'
 
-if ARGV.length < 1
+if ARGV.length < 1 || ARGV.include?('--help')
   puts "\nUsage: \e[1m#{$0}\e[0m file_with_points_array.json (or .yml or .csv) [more files...]"
   puts "\nJSON or YML should be of the form [ { \"x\": 0, \"y\": 0 }, ... ]."
   puts "JSON and YML can also use the MB::Geometry::Generators.generate_from_file syntax."
@@ -28,19 +28,35 @@ until ARGV.empty?
     points = MB::Geometry::Generators.generate_from_file(ARGV[0])
 
     t = nil
+    neighbors = nil
+    triangles = nil
+
     elapsed_triangulate = Benchmark.realtime do
-      t = MB::Geometry::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y], p[:name]] })
+      if MB::Geometry::Voronoi::DEFAULT_ENGINE == :rubyvor
+        t = MB::Geometry::Voronoi.new(points, sigfigs: 9, reflect: false)
+        neighbors = t.cells.sort_by(&:point).map { |c| [ c.point, c.neighbors.map(&:point).sort ] }.to_h
+      else
+        t = MB::Geometry::Delaunay.new(points.map { |p| p.is_a?(Array) ? p : [p[:x], p[:y], p[:name]] })
+        neighbors = t.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h
+      end
     end
 
     tris = nil
     elapsed_triangles = Benchmark.realtime do
-      tris = t.triangles
+      if MB::Geometry::Voronoi::DEFAULT_ENGINE == :rubyvor
+        tris = t.delaunay_triangles.map { |tr|
+          tr.points.sort.flatten
+        }.sort
+      else
+        tris = t.triangles.map(&:sort).map { |tr| tr.map { |p| [p.x, p.y] }.flatten }.sort
+      end
     end
 
     circumcircles = nil
     elapsed_circumcircles = Benchmark.realtime do
       circumcircles = tris.map { |t|
-        MB::Geometry::Delaunay.circumcircle(t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y)
+        raise "T is not 6" unless t.length == 6
+        MB::Geometry.circumcircle(*t)
       }
     end
 
@@ -50,10 +66,9 @@ until ARGV.empty?
 
     puts MB::U.highlight(
       {
-        neighbors: t.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h,
-        triangles: tris.map { |t| t = t.sort; [t[0].x, t[0].y, t[1].x, t[1].y, t[2].x, t[2].y] }.sort,
-      },
-      columns: 80
+        neighbors: neighbors,
+        triangles: tris,
+      }
     )
 
     degenerates = circumcircles.select { |cc| cc.nil? || cc.any?(&:nil?) }

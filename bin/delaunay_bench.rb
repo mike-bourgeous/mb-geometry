@@ -10,7 +10,7 @@ require 'benchmark'
 require 'json'
 
 $:.unshift(File.join(__dir__, '..', 'lib'))
-require 'mb/geometry/delaunay'
+require 'mb/geometry'
 
 random = Random.new(ENV['RANDOM_SEED']&.to_i || 0)
 
@@ -21,12 +21,26 @@ points = count.times.map {
 
 v = nil
 t = nil
+neighbors = nil
 
 begin
+  puts "Benchmarking the \e[1m#{MB::Geometry::Voronoi::DEFAULT_ENGINE}\e[0m triangulation engine"
+
   elapsed = Benchmark.realtime do
-    100.times do
-      v = MB::Geometry::Delaunay.new(points)
-      t = v.triangles
+    if MB::Geometry::Voronoi::DEFAULT_ENGINE == :rubyvor
+      100.times do
+        v = MB::Geometry::Voronoi.new(points, reflect: false)
+        t = v.delaunay_triangles
+      end
+
+      neighbors = v.cells.sort_by(&:point).map { |c| [ c.point, c.neighbors.map(&:point).sort ] }.to_h
+    else
+      100.times do
+        v = MB::Geometry::Delaunay.new(points)
+        t = v.triangles
+      end
+
+      neighbors = v.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h
     end
   end
 rescue => e
@@ -40,10 +54,6 @@ rescue => e
   raise
 end
 
-puts Pry::ColorPrinter.pp(
-  v.points.sort.map { |p| [ [p.x, p.y], p.neighbors.sort.map { |n| [n.x, n.y] } ] }.to_h,
-  '',
-  80
-)
+puts MB::U.highlight(neighbors, columns: 80)
 
 puts "\n\e[1m#{elapsed}\e[0m seconds for \e[1m#{points.length}\e[0m points and \e[1m#{t.length}\e[0m triangles\n\n"

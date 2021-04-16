@@ -262,21 +262,17 @@ RSpec.describe(MB::Geometry::Generators) do
       }
 
       it 'can anneal points using the Voronoi partition' do
-        pending 'Need to copy over the Voronoi code for this to work'
-
         expect(plain_points).not_to eq(annealed_points)
       end
 
       it 'preserves X and Y range' do
-        pending 'Need to copy over the Voronoi code for this to work'
-
         x1, y1 = plain_points.map { |p| p.values_at(:x, :y) }.transpose
         x2, y2 = annealed_points.map { |p| p.values_at(:x, :y) }.transpose
 
-        expect(x1.min.round(5)).to eq(x2.min.round(5))
-        expect(x1.max.round(5)).to eq(x2.max.round(5))
-        expect(y1.min.round(5)).to eq(y2.min.round(5))
-        expect(y1.max.round(5)).to eq(y2.max.round(5))
+        expect(x1.min.round(4)).to eq(x2.min.round(4))
+        expect(x1.max.round(4)).to eq(x2.max.round(4))
+        expect(y1.min.round(4)).to eq(y2.min.round(4))
+        expect(y1.max.round(4)).to eq(y2.max.round(4))
       end
     end
   end
