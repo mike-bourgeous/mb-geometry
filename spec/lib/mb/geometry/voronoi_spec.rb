@@ -1,8 +1,25 @@
 require 'timeout'
 
 RSpec.describe(MB::Geometry::Voronoi) do
-  [:rubyvor, :delaunay].each do |engine|
+  [:rubyvor, :delaunay, :delaunay_debug].each do |engine|
     context "with the #{engine} engine" do
+      if engine == :delaunay_debug
+        before (:all) {
+          class << MB::Geometry::DelaunayDebug
+            alias_method :loglog_bk, :loglog
+            undef loglog
+            def loglog(*a); end
+          end
+        }
+
+        after (:all) {
+          class << MB::Geometry::DelaunayDebug
+            undef loglog
+            alias_method :loglog, :loglog_bk
+          end
+        }
+      end
+
       it 'can be constructed' do
         v = MB::Geometry::Voronoi.new([[0, 0], [0, 1], [1, 0], [1, 1]], engine: engine)
         expect(v.delaunay_triangles).not_to eq(nil)

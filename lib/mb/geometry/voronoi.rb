@@ -312,7 +312,7 @@ module MB::Geometry
         @neighbors ||= (
           if @voronoi.engine == :rubyvor
             @voronoi.rubyvor.nn_graph[index].map { |i| @voronoi.cells[i] }.compact
-          elsif @voronoi.engine == :delaunay
+        elsif @voronoi.engine == :delaunay || @voronoi.engine == :delaunay_debug
             @voronoi.delaunay.points[index].neighbors.map { |p| @voronoi.cells[p.idx] }.compact
           else
             raise "Invalid Voronoi engine #{@voronoi.engine}"
@@ -426,9 +426,10 @@ module MB::Geometry
     # vertex coalescing.
     #
     # Pass :rubyvor for +:engine+ to use the RubyVor gem for Delauney
-    # triangulation, or :delaunay to use a slower pure Ruby implemtation
-    # written specifically for this library.  The default can be controlled by
-    # the DELAUNAY_ENGINE environment variable.
+    # triangulation, :delaunay to use a slower pure Ruby implemtation written
+    # specifically for this library, or :delaunay_debug to use an even slower
+    # debugging variant.  The default can be controlled by the DELAUNAY_ENGINE
+    # environment variable (see MB::Geometry::Voronoi::DELAUNAY_ENGINE).
     def initialize(points = [], reflect: true, sigfigs: 5, engine: DEFAULT_ENGINE)
       @cells = []
       @pointset = {}
@@ -459,7 +460,7 @@ module MB::Geometry
       @dispose = true
 
       @engine = engine
-      raise "Invalid engine #{engine.inspect}" if @engine != :rubyvor && @engine != :delaunay
+      raise "Invalid engine #{engine.inspect}" if @engine != :rubyvor && @engine != :delaunay && @engine != :delaunay_debug
 
       replace_points(points)
 
@@ -931,7 +932,13 @@ module MB::Geometry
     # Returns a MB::Geometry::Delaunay triangulation of the raw points (including
     # reflections, if enabled) of this diagram.
     def delaunay
-      @delaunay ||= MB::Geometry::Delaunay.new(raw_points)
+      @delaunay ||= (
+        if @engine == :delaunay_debug
+          MB::Geometry::DelaunayDebug.new(raw_points)
+        else
+          MB::Geometry::Delaunay.new(raw_points)
+        end
+      )
     end
 
     # Returns an array of DelaunayTriangle objects representing all triangles
@@ -953,7 +960,7 @@ module MB::Geometry
             puts "Warning: ignoring degenerate triangle #{t}" if t.area == 0
             t.area == 0
           }.to_a
-        elsif @engine == :delaunay
+        elsif @engine == :delaunay || @engine == :delaunay_debug
           delaunay.triangles.lazy.select { |points|
             points.any? { |p| p.idx < @cells.size }
           }.map { |t|
