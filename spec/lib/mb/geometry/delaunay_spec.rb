@@ -297,27 +297,12 @@
           end
         end
 
-        it 'raises an error when adding an identical point to itself' do
-          pending 'This condition was removed for performance reasons'
-          expect { p2.add(test_class::Point.new(p2.x, p2.y)) }.to raise_error(/identical/)
-        end
-
         it 'does not raise an error when adding a collinear point in the opposite direction' do
           p1.add(p7)
           expect { p1.add(p5) }.not_to raise_error
 
           expect(p1.clockwise(p7)).to eq(p5)
           expect(p1.clockwise(p5)).to eq(p7)
-        end
-
-        it 'raises an error when adding a point collinear with another neighbor in the same direction' do
-          pending 'This check was removed with @cw and @ccw; it would be an expensive check'
-
-          p1.add(p7)
-          expect { p1.add(p9) }.to raise_error(/direction/)
-
-          p1.add(p10)
-          expect { p1.add(p2) }.to raise_error(/direction/)
         end
       end
 
