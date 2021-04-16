@@ -170,7 +170,7 @@ module MB::Geometry
 
           svg_state[:svg] << <<-XML
           <g id="cell-#{idx}">
-            <polygon class="voronoi" style="fill:#{color};fill-opacity:#{a};" points="#{cv.join(' ')}" />
+            <polygon class="voronoi" style="fill:#{color};fill-opacity:#{a};stroke-opacity:#{a}" points="#{cv.join(' ')}" />
           XML
 
           svg_state[:svg] << %Q{<circle class="cell" r="5" cx="#{cx}" cy="#{cy}" />\n} if include_points
