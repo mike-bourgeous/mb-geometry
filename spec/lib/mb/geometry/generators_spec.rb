@@ -279,9 +279,9 @@ RSpec.describe(MB::Geometry::Generators) do
 
   describe '.generate_from_file' do
     it 'can load a .yml file' do
-      file = File.expand_path('../../../../test_data/square.yml', __dir__)
+      file = File.expand_path('../../../../test_data/3gon_color.yml', __dir__)
       points = MB::Geometry::Generators.generate_from_file(file)
-      expect(points.length).to eq(4)
+      expect(points.length).to eq(3)
       expect(points[0][:color]).to eq([0.9, 0.3, 0.1])
     end
 
