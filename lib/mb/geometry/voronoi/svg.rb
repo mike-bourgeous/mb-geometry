@@ -74,23 +74,23 @@ module MB::Geometry
       # scaling ranges, and a String with an SVG header.
       def start_svg(max_width, max_height)
         max_aspect = max_width.to_f / max_height
-        bounding_aspect = @width.to_f / height
+        bounding_aspect = @user_width.to_f / height
 
         if bounding_aspect > max_aspect
           xres = max_width
-          yres = (max_width * @height.to_f / @width).round
+          yres = (max_width * @user_height.to_f / @user_width).round
         else
-          xres = (max_height * @width.to_f / @height).round
+          xres = (max_height * @user_width.to_f / @user_height).round
           yres = max_height
         end
 
-        x_from = @xmin..@xmax
-        y_from = @ymax..@ymin # Convert cartesian to screen coordinates
+        x_from = (@user_xmin || @xmin)..(@user_xmax || @xmax)
+        y_from = (@user_ymax || @ymax)..(@user_ymin || @ymin) # Reverse Y to convert Cartesian to screen coordinates
         x_to = 0..xres
         y_to = 0..yres
 
         svg = <<-XML
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 #{xres} #{yres}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 #{xres} #{yres}" overflow="hidden" preserveAspectRatio="xMinYMin meet">
         <style>
           circle.cell {
             stroke: #bbb;

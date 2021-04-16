@@ -1208,6 +1208,8 @@ module MB::Geometry
         end
       end
 
+      @user_width = (@user_xmax || @xmax) - (@user_xmin || @xmin)
+      @user_height = (@user_ymax || @ymax) - (@user_ymin || @ymin)
       @width = @xmax - @xmin
       @height = @ymax - @ymin
       @x_center = (@xmax + @xmin) / 2.0
