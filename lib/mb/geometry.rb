@@ -279,3 +279,4 @@ end
 require_relative 'geometry/generators'
 require_relative 'geometry/delaunay'
 require_relative 'geometry/voronoi'
+require_relative 'geometry/voronoi_animator'
