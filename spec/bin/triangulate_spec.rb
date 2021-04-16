@@ -9,7 +9,10 @@ RSpec.describe('bin/triangulate.rb') do
     end
 
     it "fails to parse an invalid file using #{engine}" do
-      expect(system({ 'DELAUNAY_ENGINE' => engine.to_s }, "#{cmd.shellescape} #{cmd.shellescape} > /dev/null")).to eq(false)
+      output = `DELAUNAY_ENGINE=#{engine.to_s.shellescape} #{cmd.shellescape} #{cmd.shellescape} 2>&1 > /dev/null`
+      result = $?
+      expect(output).to match(/Unsupported extension/)
+      expect(result).not_to be_success
     end
   end
 end
