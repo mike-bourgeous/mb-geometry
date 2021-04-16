@@ -57,6 +57,8 @@ begin
   current_frame = 0
   digits = Math.log10(total_frames).ceil rescue 5
 
+  puts "Generating \e[1m#{total_frames}\e[0m images."
+
   existing_files = Dir["#{out_prefix}_#{'?' * digits}.svg"].sort
   unless existing_files.empty?
     loop do
