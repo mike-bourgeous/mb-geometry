@@ -3,7 +3,7 @@
 require 'bundler/setup'
 
 require 'pry'
-require 'pry-byebug'
+# Uncomment if debugging --- require 'pry-byebug'
 
 require 'json'
 require 'benchmark'
