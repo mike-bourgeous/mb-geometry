@@ -9,7 +9,9 @@ require 'mb-geometry'
 
 def usage
   puts "\nUsage: \e[1m#{$0}\e[0m output_image.svg filename.(json|yml|csv) [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
-  puts "\nExample:\n\t#{$0} /tmp/polygons.svg test_data/square.yml 60 test_data/3gon.yml 60 test_data/pentagon.json 60"
+  puts "\nExample:"
+  puts "\t#{$0} /tmp/polygons.svg test_data/square.yml 60 test_data/3gon.yml 60 test_data/pentagon.json 60"
+  puts "\tThis will animate for 60 frames, then pause for 60 frames."
 
   exit 1
 end
@@ -33,8 +35,14 @@ begin
     if arg =~ /\A\d+\z/
       # This argument is a number of frames
       raise "Frames specified before any graph filenames" if transitions.empty?
-      raise "Frame count specified more than once for #{transitions.last[:filename]}" if transitions.last[:frames]
-      transitions.last[:frames] = arg.to_i
+
+      if transitions.last[:pause]
+        raise "Too many frame counts specified for #{transitions.last[:filename]}"
+      elsif transitions.last[:frames]
+        transitions.last[:pause] = arg.to_i
+      else
+        transitions.last[:frames] = arg.to_i
+      end
 
     else
       # This argument is a filename
@@ -45,37 +53,85 @@ begin
 
   raise "No graph filenames/transitions were given" if transitions.empty?
 
-  total_frames = transitions.map { |t| (t[:frames] || 1) }.sum
-
+  total_frames = transitions.map { |t| (t[:frames] || 1) + (t[:pause] || t[:frames] || 1)}.sum
   current_frame = 0
   digits = Math.log10(total_frames).ceil rescue 5
 
+  existing_files = Dir["#{out_prefix}_#{'?' * digits}.svg"].sort
+  unless existing_files.empty?
+    loop do
+      STDOUT.write "\e[1;33m#{existing_files.length}\e[0m output files like \e[33m#{existing_files.first}\e[0m exist.  Remove them and proceed? \e[1m[Y / N]\e[0m "
+      STDOUT.flush
+
+      reply = STDIN.readline # TODO: just require single Y or N character
+
+      case reply
+      when /\A[Yy]/
+        puts "Deleting files and continuing."
+        existing_files.each do |f|
+          File.unlink(f)
+        end
+        break
+
+      when /\A[Nn]/
+        puts "Aborting."
+        exit 1
+      end
+    end
+  end
+
+  # Load points and compute bounding box
+  xmin = -32.0 / 9.0
+  xmax = 32.0 / 9.0
+  ymin = -2
+  ymax = 2
+  transitions.each do |t|
+    bbox = nil
+
+    t[:points] = MB::Geometry::Generators.generate_from_file(t[:filename]) do |f|
+      bbox = f[:bounding_box] if f.is_a?(Hash)
+    end
+
+    bbox ||= MB::Geometry.bounding_box(t[:points].map { |p| p.values_at(:x, :y) }, 0.001)
+    xmin = bbox[0] if bbox[0] < xmin
+    ymin = bbox[1] if bbox[1] < ymin
+    xmax = bbox[2] if bbox[2] > xmax
+    ymax = bbox[3] if bbox[3] > ymax
+  end
+
+  puts "Bounding box is \e[34m(#{xmin}, #{ymin}), #{xmax}, #{ymax})\e[0m."
+
   v = MB::Geometry::Voronoi.new([])
+  v.set_area_bounding_box(xmin, ymin, xmax, ymax)
   anim = MB::Geometry::VoronoiAnimator.new(v)
 
   transitions.each do |t|
     filename = t[:filename]
     frames = t[:frames] || 0
-    puts "Transition to \e[1;33m#{t[:filename]}\e[0m over \e[1;35m#{t[:frames] || 0}\e[0m frames."
-
-    points = MB::Geometry::Generators.generate_from_file(filename)
+    pause = t[:pause] || t[:frames] || 1
+    puts "Transition to \e[1;34m#{t[:points].length}\e[0m point(s) from \e[1;33m#{filename}\e[0m over \e[1;35m#{frames}\e[0m frame(s)."
 
     if frames == 0
-      v.replace_points(points)
-      v.save_svg(svg_filename(out_prefix, current_frame, digits))
-      current_frame += 1
+      v.replace_points(t[:points])
     else
-      anim.transition(points, frames)
+      anim.transition(t[:points], frames)
       while anim.update
-        v.save_svg(svg_filename(out_prefix, current_frame, digits))
+        v.save_svg(svg_filename(out_prefix, current_frame, digits), max_width: 1920, max_height: 1080)
         current_frame += 1
       end
     end
+
+    puts "Pause for \e[1;35m#{pause}\e[0m frame(s)."
+
+    pause.times do
+      v.save_svg(svg_filename(out_prefix, current_frame, digits), max_width: 1920, max_height: 1080)
+      current_frame += 1
+    end
   end
 
-  if out_ext == '.mp4'
+  if out_ext == '.mp4' || out_ext == '.mkv'
     puts "\n\e[36mGenerating \e[1m#{output}\e[22m with ffmpeg.\e[0m\n\n"
-    `ffmpeg -loglevel 24 -r:v 60 -i #{out_prefix}_%0#{digits}d.svg -crf 12 #{out_prefix}.mp4`
+    `ffmpeg -loglevel 24 -r:v 60 -i #{out_prefix}_%0#{digits}d.svg -crf 12 #{out_prefix}#{out_ext}`
   end
 rescue => e
   puts "\e[1m#{e}\e[0m\n\t#{e.backtrace.join("\n\t")}"
