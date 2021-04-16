@@ -8,10 +8,10 @@ require 'bundler/setup'
 require 'mb-geometry'
 
 def usage
-  puts "\nUsage: \e[1m#{$0}\e[0m output_image.svg filename.(json|yml|csv) [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
+  puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv) filename.(json|yml|csv) [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
   puts "\nExample:"
-  puts "\t#{$0} /tmp/polygons.svg test_data/square.yml 60 test_data/3gon.yml 60 test_data/pentagon.json 60"
-  puts "\tThis will animate for 60 frames, then pause for 60 frames."
+  puts "\t#{$0} /tmp/polygons.mkv test_data/square.yml 60 test_data/3gon.yml 60 test_data/pentagon.json 60 test_data/zero.csv 180 0"
+  puts "\tThis will animate between polygons for 60 frames, pause for 60 frames each time, then fade out over 180."
 
   exit 1
 end
