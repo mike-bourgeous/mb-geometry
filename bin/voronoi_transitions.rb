@@ -92,11 +92,13 @@ begin
       bbox = f[:bounding_box] if f.is_a?(Hash)
     end
 
-    bbox ||= MB::Geometry.bounding_box(t[:points].map { |p| p.values_at(:x, :y) }, 0.001)
-    xmin = bbox[0] if bbox[0] < xmin
-    ymin = bbox[1] if bbox[1] < ymin
-    xmax = bbox[2] if bbox[2] > xmax
-    ymax = bbox[3] if bbox[3] > ymax
+    if t[:points].length > 0
+      bbox ||= MB::Geometry.bounding_box(t[:points].map { |p| p.values_at(:x, :y) }, 0.001)
+      xmin = bbox[0] if bbox[0] < xmin
+      ymin = bbox[1] if bbox[1] < ymin
+      xmax = bbox[2] if bbox[2] > xmax
+      ymax = bbox[3] if bbox[3] > ymax
+    end
   end
 
   puts "Bounding box is \e[34m(#{xmin}, #{ymin}), #{xmax}, #{ymax})\e[0m."
