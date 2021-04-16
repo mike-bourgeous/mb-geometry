@@ -5,6 +5,8 @@
 
 require 'bundler/setup'
 
+require 'shellwords'
+
 require 'mb-geometry'
 
 def usage
@@ -135,7 +137,9 @@ begin
 
   if out_ext == '.mp4' || out_ext == '.mkv'
     puts "\n\e[36mGenerating \e[1m#{output}\e[22m with ffmpeg.\e[0m\n\n"
-    `ffmpeg -loglevel 24 -r:v 60 -i #{out_prefix}_%0#{digits}d.svg -crf 12 #{out_prefix}#{out_ext}`
+    if !system("ffmpeg -loglevel 24 -r:v 60 -i #{out_prefix.shellescape}_%0#{digits}d.svg -crf 12 #{output.shellescape}")
+      raise "ffmpeg failed: #{$?}"
+    end
   end
 rescue => e
   puts "\e[1m#{e}\e[0m\n\t#{e.backtrace.join("\n\t")}"
