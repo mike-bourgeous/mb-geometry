@@ -5,6 +5,18 @@ area calculation and line intersection, to Delaunay triangulation and Voronoi
 partitions.  This is companion code to my [educational video series about code
 and sound][0].
 
+![Animation of 3-, 4-, and 5-point Voronoi diagrams](readme_images/polygon.mp4)
+
+```bash
+XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.mp4 \
+    test_data/3gon.yml 30 15 \
+    test_data/square.yml 30 15 \
+    test_data/pentagon.json 30 15 \
+    test_data/zero.csv 30 0
+```
+
+![Output of the voronoi\_transitions.rb command](readme_images/mp4_creation.png)
+
 You might also be interested in [mb-sound][1], [mb-math][2], and [mb-util][3].
 
 This code is reasonably well-tested, but I recommend using it for non-critical
