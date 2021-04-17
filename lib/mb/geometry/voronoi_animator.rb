@@ -61,7 +61,9 @@ module MB::Geometry
     end
 
     # An animation that transitions from one set of Voronoi points to another
-    # over a given number of frames.
+    # over a given number of frames.  If the new points do not have any colors
+    # specified, they will be given colors based on the order in which they
+    # appear.
     class TransitionAnimation < AnimationGroup
       attr_accessor :weight
 

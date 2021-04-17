@@ -10,7 +10,9 @@ require 'shellwords'
 require 'mb-geometry'
 
 def usage
-  puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv|webm|gif) filename.(json|yml|csv) [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
+  puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv|webm|gif) filename.(json|yml|csv) [modifier] [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
+  puts "\nModifiers (always start with two underscores):"
+  puts "\t\e[1m__shuffle\e[0m - Randomizes the order of the points in the file"
   puts "\nExample:"
   puts "\t#{$0} /tmp/polygons.mkv test_data/square.yml 60 test_data/3gon.yml 60 test_data/pentagon.json 60 test_data/zero.csv 180 0"
   puts "\tThis will animate between polygons for 60 frames, pause for 60 frames each time, then fade out over 180."
@@ -35,8 +37,8 @@ begin
 
   ARGV.each do |arg|
     if arg =~ /\A\d+\z/
-      # This argument is a number of frames
-      raise "Frames specified before any graph filenames" if transitions.empty?
+      # This argument is a number of frames for the last file given
+      raise "Frame count given before any graph filenames" if transitions.empty?
 
       if transitions.last[:pause]
         raise "Too many frame counts specified for #{transitions.last[:filename]}"
@@ -44,6 +46,17 @@ begin
         transitions.last[:pause] = arg.to_i
       else
         transitions.last[:frames] = arg.to_i
+      end
+
+    elsif arg =~ /\A__[a-z]+\z/
+      # This argument is a modifier (e.g. __shuffle) for the previous file given
+      case arg
+      when '__shuffle'
+        raise "Modifier given before any graph filenames" if transitions.empty?
+        transitions.last[:shuffle] = true
+
+      else
+        raise "Invalid modifier #{arg.inspect}"
       end
 
     else
@@ -84,6 +97,9 @@ begin
     end
   end
 
+  # Deterministic shuffling
+  random = Random.new(0)
+
   # Load points and compute bounding box
   xmin = -32.0 / 9.0
   xmax = 32.0 / 9.0
@@ -94,6 +110,13 @@ begin
 
     t[:points] = MB::Geometry::Generators.generate_from_file(t[:filename]) do |f|
       bbox = f[:bounding_box] if f.is_a?(Hash)
+    end
+
+    # Apply the __shuffle modifier, if given.
+      # FIXME: Use VoronoiAnimator#shuffle instead of this
+    if t[:shuffle] && !t[:points].empty?
+      points_copy = t[:points].dup
+      t[:points].shuffle!(random: random) while t[:points] == points_copy
     end
 
     if t[:points].length > 0
