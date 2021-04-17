@@ -17,6 +17,7 @@ points = MB::Geometry::Generators.generate_from_file(ARGV[0]) { |d|
   raw_hash = d # FIXME: better way of getting other data from the file
 }
 v = MB::Geometry::Voronoi.new(points)
+v.set_area_bounding_box(-32.0/9.0, -2, 32.0/9.0, 2)
 
 box = raw_hash[:expanded_box] || raw_hash[:bounding_box] || raw_hash[:original_box]
 v.set_area_bounding_box(*box) if box
