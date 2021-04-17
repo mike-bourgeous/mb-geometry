@@ -434,7 +434,9 @@ module MB::Geometry
       @cells = []
       @pointset = {}
       @reflect = reflect
+
       @sigfigs = sigfigs
+      @rvpoint_scale = 0.0001
       @sigscale = 10.0 ** (-@sigfigs)
       @squaredscale = (10 * @sigscale) ** 2
 
@@ -570,7 +572,7 @@ module MB::Geometry
         y = y_or_nil
       end
 
-      p = find_safe_point(x.round(9), y.round(9))
+      p = find_safe_point(x.round(9), y.round(9), cells.length)
 
       Cell.new(voronoi: self, point: p, index: @cells.size, name: name, color: color).tap { |c|
         @cells << c
@@ -711,7 +713,7 @@ module MB::Geometry
           y = (y - new_ycenter) * hmul + old_ycenter
         end
 
-        new_point = find_safe_point(x, y)
+        new_point = find_safe_point(x, y, c.index)
         c.set_point_internal(*new_point)
 
         @pointset[new_point] = c
@@ -1026,7 +1028,7 @@ module MB::Geometry
       @pointset.delete(old_point)
 
       begin
-        new_point = find_safe_point(*new_point)
+        new_point = find_safe_point(*new_point, cell.index)
       rescue => e
         @pointset[old_point] = cell
         raise
@@ -1102,14 +1104,30 @@ module MB::Geometry
 
     # If the given coordinates exist already, shifts them around until they are
     # unique.  Returns a unique [x, y] that may safely be added to the diagram.
-    def find_safe_point(x, y)
+    def find_safe_point(x, y, idx)
       new_point = [
         MB::M.sigfigs(x.to_f.round(@sigfigs + 1), @sigfigs),
         MB::M.sigfigs(y.to_f.round(@sigfigs + 1), @sigfigs)
       ]
 
-      if @pointset.include?([x, y]) || @pointset.include?(new_point)
+      if @pointset.include?(new_point)
+        @point_offsets ||= [
+          [@rvpoint_scale, 0],
+          [@rvpoint_scale, @rvpoint_scale],
+          [0, @rvpoint_scale],
+          [-@rvpoint_scale, @rvpoint_scale],
+          [-@rvpoint_scale, 0],
+          [-@rvpoint_scale, -@rvpoint_scale],
+          [0, -@rvpoint_scale],
+          [@rvpoint_scale, -@rvpoint_scale],
+        ]
+
+        xoff, yoff = @point_offsets[idx % @point_offsets.length]
+        new_point[0] += xoff
+        new_point[1] += yoff
+
         # Choose a range that is proportionate to the graph, if possible
+        @pointrand ||= Random.new(0)
         randscale = 10.0 * @sigscale
         randrange = MB::M.max_abs(*new_point).abs * randscale
         randrange = randscale * [@xmax - @xmin, @ymax - @ymin].max if randrange == 0
@@ -1117,13 +1135,16 @@ module MB::Geometry
 
         # Gradually expand the range if somehow we land on another existing point
         100.times do |t|
+          break unless @pointset.include?(new_point)
+
           # 1.1 gives a final range of about +/- 1.2 times the original after
           # 100 times if sigfigs is 5
           randrange *= 1.1
           range = -randrange..randrange
-          new_point[0] += rand(range)
-          new_point[1] += rand(range)
-          break unless @pointset.include?(new_point)
+          new_point[0] += @pointrand.rand(range)
+          new_point[1] += @pointrand.rand(range)
+          new_point[0] = MB::M.sigfigs(new_point[0].round(@sigfigs + 1), @sigfigs)
+          new_point[1] = MB::M.sigfigs(new_point[1].round(@sigfigs + 1), @sigfigs)
         end
 
         # This is incredibly unlikely
