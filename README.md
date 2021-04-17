@@ -5,17 +5,15 @@ area calculation and line intersection, to Delaunay triangulation and Voronoi
 partitions.  This is companion code to my [educational video series about code
 and sound][0].
 
-https://user-images.githubusercontent.com/5015814/115095460-41428300-9ed6-11eb-800c-2c00307309f9.mp4
-
 ```bash
-XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.mp4 \
-    test_data/3gon.yml 30 15 \
-    test_data/square.yml 30 15 \
-    test_data/pentagon.json 30 15 \
+XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.gif \
+    test_data/3gon.yml 30 60 \
+    test_data/square.yml 30 60 \
+    test_data/pentagon.json 30 60 \
     test_data/zero.csv 30 0
 ```
 
-![Output of the voronoi\_transitions.rb command](readme_images/mp4_creation.png)
+![Animation of Voronoi transitions](readme_images/polygon.gif)
 
 You might also be interested in [mb-sound][1], [mb-math][2], and [mb-util][3].
 
@@ -35,19 +33,31 @@ diagrams into an animation with smooth transitions.  See the documentation for
 `MB::Geometry::Generators.generate` in `lib/mb/geometry/generators.rb` for the
 syntax of the Voronoi diagram file format (.json, .yml, or .csv).
 
-Build an animation as a .gif (also saves .svg sequence):
+#### Shuffling points
 
 ```bash
-XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.gif \
-    test_data/3gon.yml 30 60 \
-    test_data/square.yml 30 60 \
-    test_data/pentagon.json 30 60 \
+XRES=640 RANDOM_SEED=10 bin/voronoi_transitions.rb /tmp/shuffle.gif \
+    test_data/lines.json 0 \
+    __shuffle 60
+```
+
+![Shuffling Voronoi points](readme_images/shuffle.gif)
+
+#### 60fps video transitions
+
+```bash
+XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.mp4 \
+    test_data/3gon.yml 30 15 \
+    test_data/square.yml 30 15 \
+    test_data/pentagon.json 30 15 \
     test_data/zero.csv 30 0
 ```
 
-![Animation of Voronoi transitions](readme_images/polygon.gif)
+![Output of the voronoi\_transitions.rb command](readme_images/mp4_creation.png)
 
-### SVG image from Voronoi diagram
+https://user-images.githubusercontent.com/5015814/115095460-41428300-9ed6-11eb-800c-2c00307309f9.mp4
+
+### Static SVG image from Voronoi diagram
 
 From the shell:
 

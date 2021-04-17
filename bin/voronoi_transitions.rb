@@ -10,9 +10,9 @@ require 'shellwords'
 require 'mb-geometry'
 
 def usage
-  puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv|webm|gif) filename.(json|yml|csv) [modifier] [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
-  puts "\nModifiers (always start with two underscores):"
-  puts "\t\e[1m__shuffle\e[0m - Randomizes the order of the points in the file"
+  puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv|webm|gif) filename.(json|yml|csv) [animate_frames [pause_frames]] [filename|__shuffle [animate_frames [pause_frames]] ...]"
+  puts "\nModifiers (always start with two underscores and take the place of a filename):"
+  puts "\t\e[1m__shuffle\e[0m - Randomizes the order of the points from the previously loaded file"
   puts "\nExample:"
   puts "\t#{$0} /tmp/polygons.mkv test_data/square.yml 60 test_data/3gon.yml 60 test_data/pentagon.json 60 test_data/zero.csv 180 0"
   puts "\tThis will animate between polygons for 60 frames, pause for 60 frames each time, then fade out over 180."
@@ -48,12 +48,13 @@ begin
         transitions.last[:frames] = arg.to_i
       end
 
-    elsif arg =~ /\A__[a-z]+\z/
-      # This argument is a modifier (e.g. __shuffle) for the previous file given
+    elsif arg =~ /\A__[a-z_]+\z/
+      # This argument is a modifier (e.g. __shuffle) for existing data, instead
+      # of a new file to render.
       case arg
       when '__shuffle'
         raise "Modifier given before any graph filenames" if transitions.empty?
-        transitions.last[:shuffle] = true
+        transitions << { modifier: :shuffle, frames: nil, pause: nil }
 
       else
         raise "Invalid modifier #{arg.inspect}"
@@ -77,10 +78,10 @@ begin
   existing_files = Dir["#{out_prefix}_#{'?' * digits}.svg"].sort
   unless existing_files.empty?
     loop do
+      # TODO: Extract this prompting and checking code into a helper function in the mb-util gem for use by all scripts in bin/?
       STDOUT.write "\e[1;33m#{existing_files.length}\e[0m output files like \e[33m#{existing_files.first}\e[0m exist.  Remove them and proceed? \e[1m[Y / N]\e[0m "
       STDOUT.flush
-
-      reply = STDIN.readline # TODO: just require single Y or N character
+      reply = STDIN.readline
 
       case reply
       when /\A[Yy]/
@@ -97,9 +98,6 @@ begin
     end
   end
 
-  # Deterministic shuffling
-  random = Random.new(0)
-
   # Load points and compute bounding box
   xmin = -32.0 / 9.0
   xmax = 32.0 / 9.0
@@ -108,23 +106,18 @@ begin
   transitions.each do |t|
     bbox = nil
 
-    t[:points] = MB::Geometry::Generators.generate_from_file(t[:filename]) do |f|
-      bbox = f[:bounding_box] if f.is_a?(Hash)
-    end
+    if t[:filename]
+      t[:points] = MB::Geometry::Generators.generate_from_file(t[:filename]) do |f|
+        bbox = f[:bounding_box] if f.is_a?(Hash)
+      end
 
-    # Apply the __shuffle modifier, if given.
-      # FIXME: Use VoronoiAnimator#shuffle instead of this
-    if t[:shuffle] && !t[:points].empty?
-      points_copy = t[:points].dup
-      t[:points].shuffle!(random: random) while t[:points] == points_copy
-    end
-
-    if t[:points].length > 0
-      bbox ||= MB::Geometry.bounding_box(t[:points].map { |p| p.values_at(:x, :y) }, 0.001)
-      xmin = bbox[0] if bbox[0] < xmin
-      ymin = bbox[1] if bbox[1] < ymin
-      xmax = bbox[2] if bbox[2] > xmax
-      ymax = bbox[3] if bbox[3] > ymax
+      if t[:points].length > 0
+        bbox ||= MB::Geometry.bounding_box(t[:points].map { |p| p.values_at(:x, :y) }, 0.001)
+        xmin = bbox[0] if bbox[0] < xmin
+        ymin = bbox[1] if bbox[1] < ymin
+        xmax = bbox[2] if bbox[2] > xmax
+        ymax = bbox[3] if bbox[3] > ymax
+      end
     end
   end
 
@@ -139,15 +132,23 @@ begin
   anim = MB::Geometry::VoronoiAnimator.new(v)
 
   transitions.each do |t|
-    filename = t[:filename]
+    filename = t[:filename] || t[:modifier]
     frames = t[:frames] || 0
     pause = t[:pause] || t[:frames] || 1
-    puts "Transition to \e[1;34m#{t[:points].length}\e[0m point(s) from \e[1;33m#{filename}\e[0m over \e[1;35m#{frames}\e[0m frame(s)."
+    puts "Transition to \e[1;34m#{t[:points]&.length}\e[0m point(s) from \e[1;33m#{filename.inspect}\e[0m over \e[1;35m#{frames}\e[0m frame(s)."
 
-    if frames == 0
-      v.replace_points(t[:points])
-    else
-      anim.transition(t[:points], frames)
+    if t[:points]
+      if frames == 0
+        v.replace_points(t[:points])
+      else
+        anim.transition(t[:points], frames)
+        while anim.update
+          v.save_svg(svg_filename(out_prefix, current_frame, digits), max_width: xres, max_height: yres)
+          current_frame += 1
+        end
+      end
+    elsif t[:modifier] == :shuffle
+      anim.shuffle(frames)
       while anim.update
         v.save_svg(svg_filename(out_prefix, current_frame, digits), max_width: xres, max_height: yres)
         current_frame += 1
