@@ -10,7 +10,7 @@ require 'shellwords'
 require 'mb-geometry'
 
 def usage
-  puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv|webm) filename.(json|yml|csv) [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
+  puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv|webm|gif) filename.(json|yml|csv) [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
   puts "\nExample:"
   puts "\t#{$0} /tmp/polygons.mkv test_data/square.yml 60 test_data/3gon.yml 60 test_data/pentagon.json 60 test_data/zero.csv 180 0"
   puts "\tThis will animate between polygons for 60 frames, pause for 60 frames each time, then fade out over 180."
@@ -139,9 +139,16 @@ begin
     end
   end
 
-  if out_ext == '.mp4' || out_ext == '.mkv' || out_ext == '.webm'
+  if out_ext == '.mp4' || out_ext == '.mkv' || out_ext == '.webm' || out_ext == '.gif'
+    if out_ext == '.gif'
+      # https://ffmpeg.org/ffmpeg-filters.html#palettegen
+      # https://superuser.com/questions/556029/how-do-i-convert-a-video-to-gif-using-ffmpeg-with-reasonable-quality
+      opts = "-gifflags +transdiff -r:v 15 -vf 'split [v1][v2] ; [v1] palettegen=stats_mode=diff:reserve_transparent=false:transparency_color=000000 [p] ; [v2][p] paletteuse=dither=none:diff_mode=rectangle:alpha_threshold=0'"
+    else
+      opts = "-movflags +faststart -pix_fmt yuv420p -crf 12"
+    end
     puts "\n\e[36mGenerating \e[1m#{output}\e[22m with ffmpeg.\e[0m\n\n"
-    if !system("ffmpeg -loglevel 24 -r:v 60 -i #{out_prefix.shellescape}_%0#{digits}d.svg -movflags +faststart -pix_fmt yuv420p -crf 12 #{output.shellescape}")
+    if !system("ffmpeg -loglevel 24 -r:v 60 -i #{out_prefix.shellescape}_%0#{digits}d.svg #{opts} #{output.shellescape}")
       raise "ffmpeg failed: #{$?}"
     end
   end
