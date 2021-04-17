@@ -105,7 +105,11 @@ begin
     end
   end
 
-  puts "Bounding box is \e[34m(#{xmin}, #{ymin}), #{xmax}, #{ymax})\e[0m."
+  puts "Bounding box is \e[34m(#{xmin}, #{ymin}), (#{xmax}, #{ymax})\e[0m."
+
+  xres = ENV['XRES']&.to_i || 1920
+  yres = ENV['YRES']&.to_i || 1080
+  puts "Max output resolution is \e[35m#{xres}x#{yres}\e[0m."
 
   v = MB::Geometry::Voronoi.new([])
   v.set_area_bounding_box(xmin, ymin, xmax, ymax)
@@ -122,7 +126,7 @@ begin
     else
       anim.transition(t[:points], frames)
       while anim.update
-        v.save_svg(svg_filename(out_prefix, current_frame, digits), max_width: 1920, max_height: 1080)
+        v.save_svg(svg_filename(out_prefix, current_frame, digits), max_width: xres, max_height: yres)
         current_frame += 1
       end
     end
@@ -130,7 +134,7 @@ begin
     puts "Pause for \e[1;35m#{pause}\e[0m frame(s)."
 
     pause.times do
-      v.save_svg(svg_filename(out_prefix, current_frame, digits), max_width: 1920, max_height: 1080)
+      v.save_svg(svg_filename(out_prefix, current_frame, digits), max_width: xres, max_height: yres)
       current_frame += 1
     end
   end
