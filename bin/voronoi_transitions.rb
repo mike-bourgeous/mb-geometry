@@ -69,7 +69,7 @@ begin
 
   raise "No graph filenames/transitions were given" if transitions.empty?
 
-  total_frames = transitions.map { |t| (t[:frames] || 1) + (t[:pause] || t[:frames] || 1)}.sum
+  total_frames = transitions.map { |t| (t[:frames] || 60) + (t[:pause] || t[:frames] || 60)}.sum
   current_frame = 0
   digits = Math.log10(total_frames).ceil rescue 5
 
@@ -133,8 +133,8 @@ begin
 
   transitions.each do |t|
     filename = t[:filename] || t[:modifier]
-    frames = t[:frames] || 0
-    pause = t[:pause] || t[:frames] || 1
+    frames = t[:frames] || 60
+    pause = t[:pause] || t[:frames] || 60
     puts "Transition to \e[1;34m#{t[:points]&.length}\e[0m point(s) from \e[1;33m#{filename.inspect}\e[0m over \e[1;35m#{frames}\e[0m frame(s)."
 
     if t[:points]
