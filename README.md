@@ -99,6 +99,25 @@ v.save_svg('/tmp/pentagon_from_code.svg')
 v.save_delaunay_svg('/tmp/pentagon_delaunay.svg')
 ```
 
+### Generate Voronoi transition animations
+
+The `bin/voronoi_transitions.rb` script will turn a sequence of Voronoi
+diagrams into an animation with smooth transitions.  See the documentation for
+`MB::Geometry::Generators.generate` in `lib/mb/geometry/generators.rb` for the
+syntax of the Voronoi diagram file format (.json, .yml, or .csv).
+
+Build an animation as a .gif (also saves .svg sequence):
+
+```bash
+XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.gif \
+    test_data/3gon.yml 30 60 \
+    test_data/square.yml 30 60 \
+    test_data/pentagon.json 30 60 \
+    test_data/zero.csv 30 0
+```
+
+![Animation of Voronoi transitions](readme_images/polygon.gif)
+
 ### Area of a polygon
 
 ```ruby
