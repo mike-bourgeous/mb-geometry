@@ -23,6 +23,75 @@ This code is reasonably well-tested, but I recommend using it for non-critical
 tasks like fun and offline graphics, and not for making important decisions or
 mission-critical data modeling.
 
+## Examples
+
+Check out all of the scripts in `bin/`; they usually have a header comment
+describing what they do.
+
+### Video or GIF of Voronoi transitions
+
+The `bin/voronoi_transitions.rb` script will turn a sequence of Voronoi
+diagrams into an animation with smooth transitions.  See the documentation for
+`MB::Geometry::Generators.generate` in `lib/mb/geometry/generators.rb` for the
+syntax of the Voronoi diagram file format (.json, .yml, or .csv).
+
+Build an animation as a .gif (also saves .svg sequence):
+
+```bash
+XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.gif \
+    test_data/3gon.yml 30 60 \
+    test_data/square.yml 30 60 \
+    test_data/pentagon.json 30 60 \
+    test_data/zero.csv 30 0
+```
+
+![Animation of Voronoi transitions](readme_images/polygon.gif)
+
+### SVG image from Voronoi diagram
+
+From the shell:
+
+```bash
+bin/voronoi_to_svg.rb test_data/pentagon.json /tmp/pentagon.svg
+```
+
+From code:
+
+```ruby
+require 'mb-geometry'
+# The Hash must be inside an Array to prevent it being interpreted as keyword args
+# Rotation is in degrees
+v = MB::Geometry::Voronoi.new([{ generator: :polygon, sides: 5, rotate: 30 }]) ; nil
+v.save_svg('/tmp/pentagon_from_code.svg')
+
+# You can save the Delaunay triangulation instead:
+v.save_delaunay_svg('/tmp/pentagon_delaunay.svg')
+```
+
+### Area of a polygon
+
+```ruby
+MB::Geometry.polygon_area([[0, 0], [1, 0], [1, 1], [0, 1]])
+# => 1.0
+```
+
+### Delaunay triangulation
+
+#### Pure Ruby algorithm
+
+The `triangulate.rb` command prints each input point's neighbors and the final
+list of triangles in Ruby Hash syntax.
+
+```bash
+DELAUNAY_ENGINE=delaunay bin/triangulate.rb test_data/square.yml
+```
+
+#### Rubyvor gem algorithm
+
+```bash
+DELAUNAY_ENGINE=rubyvor bin/triangulate.rb test_data/square.yml
+```
+
 ## Installation and usage
 
 This project contains some useful programs of its own, or you can use it as a
@@ -71,75 +140,6 @@ To use mb-geometry in your own Ruby projects, add this Git repo to your
 # your-project/Gemfile
 gem 'mb-geometry', git: 'https://github.com/mike-bourgeous/mb-geometry.git'
 gem 'mb-math', git: 'https://github.com/mike-bourgeous/mb-math.git'
-```
-
-## Examples
-
-Check out all of the scripts in `bin/`; they usually have a header comment
-describing what they do.
-
-### Generate SVG of a Voronoi partition
-
-From the shell:
-
-```bash
-bin/voronoi_to_svg.rb test_data/pentagon.json /tmp/pentagon.svg
-```
-
-From code:
-
-```ruby
-require 'mb-geometry'
-# The Hash must be inside an Array to prevent it being interpreted as keyword args
-# Rotation is in degrees
-v = MB::Geometry::Voronoi.new([{ generator: :polygon, sides: 5, rotate: 30 }]) ; nil
-v.save_svg('/tmp/pentagon_from_code.svg')
-
-# You can save the Delaunay triangulation instead:
-v.save_delaunay_svg('/tmp/pentagon_delaunay.svg')
-```
-
-### Generate Voronoi transition animations
-
-The `bin/voronoi_transitions.rb` script will turn a sequence of Voronoi
-diagrams into an animation with smooth transitions.  See the documentation for
-`MB::Geometry::Generators.generate` in `lib/mb/geometry/generators.rb` for the
-syntax of the Voronoi diagram file format (.json, .yml, or .csv).
-
-Build an animation as a .gif (also saves .svg sequence):
-
-```bash
-XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.gif \
-    test_data/3gon.yml 30 60 \
-    test_data/square.yml 30 60 \
-    test_data/pentagon.json 30 60 \
-    test_data/zero.csv 30 0
-```
-
-![Animation of Voronoi transitions](readme_images/polygon.gif)
-
-### Area of a polygon
-
-```ruby
-MB::Geometry.polygon_area([[0, 0], [1, 0], [1, 1], [0, 1]])
-# => 1.0
-```
-
-### Delaunay triangulation
-
-#### Pure Ruby algorithm
-
-The `triangulate.rb` command prints each input point's neighbors and the final
-list of triangles in Ruby Hash syntax.
-
-```bash
-DELAUNAY_ENGINE=delaunay bin/triangulate.rb test_data/square.yml
-```
-
-#### Rubyvor gem algorithm
-
-```bash
-DELAUNAY_ENGINE=rubyvor bin/triangulate.rb test_data/square.yml
 ```
 
 ## Testing
