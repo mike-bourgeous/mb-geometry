@@ -382,7 +382,7 @@ module MB::Geometry
     # :delaunay to use a pure Ruby implementation, or :rubyvor to use the
     # RubyVor gem.  The DELAUNAY_ENGINE environment variable may set to
     # 'rubyvor' or 'delaunay' to override this default.
-    DEFAULT_ENGINE = ENV['DELAUNAY_ENGINE']&.sub(/^:/, '')&.to_sym || :delaunay
+    DEFAULT_ENGINE = ENV['DELAUNAY_ENGINE']&.sub(/^:/, '')&.to_sym || :rubyvor
 
     # Returns the width of the #area_bounding_box.
     attr_reader :width
