@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # Animates blends between graph files and saves resulting frames to individual
 # SVGs.  If ffmpeg is present and has SVG support enabled, it can also generate
-# a .mp4 file.
+# a video file.
 
 require 'bundler/setup'
 
@@ -10,7 +10,7 @@ require 'shellwords'
 require 'mb-geometry'
 
 def usage
-  puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv) filename.(json|yml|csv) [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
+  puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv|webm) filename.(json|yml|csv) [animate_frames [pause_frames]] [filename [animate_frames [pause_frames]] ...]"
   puts "\nExample:"
   puts "\t#{$0} /tmp/polygons.mkv test_data/square.yml 60 test_data/3gon.yml 60 test_data/pentagon.json 60 test_data/zero.csv 180 0"
   puts "\tThis will animate between polygons for 60 frames, pause for 60 frames each time, then fade out over 180."
@@ -135,9 +135,9 @@ begin
     end
   end
 
-  if out_ext == '.mp4' || out_ext == '.mkv'
+  if out_ext == '.mp4' || out_ext == '.mkv' || out_ext == '.webm'
     puts "\n\e[36mGenerating \e[1m#{output}\e[22m with ffmpeg.\e[0m\n\n"
-    if !system("ffmpeg -loglevel 24 -r:v 60 -i #{out_prefix.shellescape}_%0#{digits}d.svg -crf 12 #{output.shellescape}")
+    if !system("ffmpeg -loglevel 24 -r:v 60 -i #{out_prefix.shellescape}_%0#{digits}d.svg -movflags +faststart -pix_fmt yuv420p -crf 12 #{output.shellescape}")
       raise "ffmpeg failed: #{$?}"
     end
   end
