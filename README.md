@@ -5,7 +5,7 @@ area calculation and line intersection, to Delaunay triangulation and Voronoi
 partitions.  This is companion code to my [educational video series about code
 and sound][0].
 
-![Animation of 3-, 4-, and 5-point Voronoi diagrams](readme_images/polygon.mp4)
+https://user-images.githubusercontent.com/5015814/115095460-41428300-9ed6-11eb-800c-2c00307309f9.mp4
 
 ```bash
 XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.mp4 \
