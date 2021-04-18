@@ -111,7 +111,7 @@ module MB::Geometry
         # Add extra Voronoi cells if the new list of points is longer
         for idx in @old_length...@new_length
           h = @new_points[idx]
-          x, y = out_of_scene(h[:x], h[:y])
+          x, y = out_of_scene(h[:x], h[:y], idx)
 
           # If going from zero points to one or more, have points fade in from alpha=0
           # (TODO: have all points optionally fade in from alpha=0?)
@@ -127,7 +127,7 @@ module MB::Geometry
         # Arrange for excess old cells to move out of scene
         for idx in @new_length...@old_length
           h = @old_points[idx]
-          x, y = out_of_scene(h[:x], h[:y])
+          x, y = out_of_scene(h[:x], h[:y], idx)
 
           # Have points that are going away fade out (TODO: make this optional)
           color = h[:color].dup
@@ -209,14 +209,15 @@ module MB::Geometry
 
       # Returns an x, y pair that is well out of scene, in the same direction
       # as a given x, y pair.
-      def out_of_scene(x, y)
+      def out_of_scene(x, y, idx)
         # Bring new points at the origin from the right
         if x == 0 && y == 0
           x = 1.0
           y = 0.0
         end
 
-        x, y = *(Vector[x, y].normalize * @new_point_scale)
+        scale = @new_point_scale * (1 + idx * 0.1)
+        x, y = *(Vector[x, y].normalize * scale)
 
         return x, y
       end
