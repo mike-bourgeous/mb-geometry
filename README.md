@@ -29,10 +29,12 @@ describing what they do.
 ### Video or GIF of Voronoi transitions
 
 The `bin/voronoi_transitions.rb` script will turn a sequence of Voronoi
-diagrams into an animation with smooth transitions.  See the documentation for
-`MB::Geometry::Generators.generate` in `lib/mb/geometry/generators.rb` for the
-syntax of the Voronoi diagram file format (.json, .yml, or .csv).  Also check
-out the `MB::Geometry::VoronoiAnimator` class.
+diagrams into an animation with smooth transitions.
+
+See the documentation for `MB::Geometry::Generators.generate` in
+`lib/mb/geometry/generators.rb` for the syntax of the Voronoi diagram file
+format (.json, .yml, or .csv), with examples in `test_data/`.  Also check out
+the `MB::Geometry::VoronoiAnimator` class.
 
 #### Shuffling points
 
