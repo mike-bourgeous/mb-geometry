@@ -121,14 +121,42 @@ begin
     end
   end
 
-  puts "Bounding box is \e[34m(#{xmin}, #{ymin}), (#{xmax}, #{ymax})\e[0m."
-
   xres = ENV['XRES']&.to_i || 1920
-  yres = ENV['YRES']&.to_i || 1080
-  puts "Max output resolution is \e[35m#{xres}x#{yres}\e[0m."
+  yres = ENV['YRES']&.to_i || xres * 9 / 16
+
+  # .mp4 needs even dimensions
+  xres += 1 if xres.odd?
+  yres += 1 if yres.odd?
+
+  aspect = Rational(xres, yres)
+  puts "Max output resolution is \e[35m#{xres}x#{yres}\e[0m with aspect \e[35m#{aspect.numerator}:#{aspect.denominator} (#{aspect.to_f})\e[0m."
+
+  # TODO: Put this bounding box aspect ratio code into MB::Geometry::Voronoi::SVG
+  xcenter = (xmin + xmax) / 2.0
+  ycenter = (ymin + ymax) / 2.0
+  width = xmax - xmin
+  height = ymax - ymin
+  bbox_aspect = width.to_f / height
+
+  if bbox_aspect < aspect
+    # Narrower; make wider
+  puts 'Make wider' # XXX
+    width *= aspect / bbox_aspect
+    xmax = xcenter + width / 2.0
+    xmin = xcenter - width / 2.0
+  elsif bbox_aspect > aspect
+    # Wider; make taller
+    puts "Make taller"# XXX
+    height *= bbox_aspect / aspect
+    ymax = ycenter + height / 2.0
+    ymin = ycenter - height / 2.0
+  end
+
+  bbox_aspect = width.to_f / height
+
+  puts "Bounding box is \e[34m(#{xmin}, #{ymin}), (#{xmax}, #{ymax})\e[0m with aspect \e[34m#{bbox_aspect}\e[0m."
 
   v = MB::Geometry::Voronoi.new([])
-  # TODO: Preserve aspect ratio of XRES/YRES
   v.set_area_bounding_box(xmin, ymin, xmax, ymax)
   anim = MB::Geometry::VoronoiAnimator.new(v)
 
