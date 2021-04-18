@@ -128,6 +128,7 @@ begin
   puts "Max output resolution is \e[35m#{xres}x#{yres}\e[0m."
 
   v = MB::Geometry::Voronoi.new([])
+  # TODO: Preserve aspect ratio of XRES/YRES
   v.set_area_bounding_box(xmin, ymin, xmax, ymax)
   anim = MB::Geometry::VoronoiAnimator.new(v)
 

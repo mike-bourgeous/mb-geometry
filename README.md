@@ -31,7 +31,8 @@ describing what they do.
 The `bin/voronoi_transitions.rb` script will turn a sequence of Voronoi
 diagrams into an animation with smooth transitions.  See the documentation for
 `MB::Geometry::Generators.generate` in `lib/mb/geometry/generators.rb` for the
-syntax of the Voronoi diagram file format (.json, .yml, or .csv).
+syntax of the Voronoi diagram file format (.json, .yml, or .csv).  Also check
+out the `MB::Geometry::VoronoiAnimator` class.
 
 #### Shuffling points
 
@@ -187,9 +188,7 @@ This project is released under a 2-clause BSD license.  See the LICENSE file.
 
 ### References
 
-See README-Delaunay.md
-
-TODO
+See `README-Delaunay.md` for Delaunay tringulation references.
 
 
 [0]: https://www.youtube.com/playlist?list=PLpRqC8LaADXnwve3e8gI239eDNRO3Nhya
