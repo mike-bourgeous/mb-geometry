@@ -157,6 +157,16 @@ Now install dependencies:
 bundle install
 ```
 
+You will also want ffmpeg if you want to make GIFs or videos:
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install ffmpeg
+
+# macOS (might not be exactly right, but this is the gist)
+brew install ffmpeg
+```
+
 ### Using the project as a Gem
 
 To use mb-geometry in your own Ruby projects, add this Git repo to your
