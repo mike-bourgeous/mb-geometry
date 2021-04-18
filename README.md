@@ -160,12 +160,13 @@ bundle install
 ### Using the project as a Gem
 
 To use mb-geometry in your own Ruby projects, add this Git repo to your
-`Gemfile`:
+`Gemfile` (plus the Git repos of other pre-release gems it depends on):
 
 ```ruby
 # your-project/Gemfile
 gem 'mb-geometry', git: 'https://github.com/mike-bourgeous/mb-geometry.git'
 gem 'mb-math', git: 'https://github.com/mike-bourgeous/mb-math.git'
+gem 'mb-util', git: 'https://github.com/mike-bourgeous/mb-util.git'
 ```
 
 ## Testing
