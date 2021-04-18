@@ -4,15 +4,15 @@
       class << MB::Geometry::DelaunayDebug
         alias_method :loglog_bk, :loglog
         undef loglog
-          def loglog(*a); end
-        end
+        def loglog(*a); end
+      end
     }
 
     after (:all) {
       class << MB::Geometry::DelaunayDebug
         undef loglog
-          alias_method :loglog, :loglog_bk
-        end
+        alias_method :loglog, :loglog_bk
+      end
     }
 
     describe(test_class::Hull) do

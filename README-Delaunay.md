@@ -58,4 +58,4 @@ to `0` to disable JSON dumping when debugging is enabled.
 
 - [Lee and Schachter, 1980](http://www.personal.psu.edu/cxc11/AERSP560/DELAUNEY/13_Two_algorithms_Delauney.pdf)
 - [Computing constrained Delaunay triangulations](https://web.archive.org/web/20170922181219/http://www.geom.uiuc.edu/~samuelp/del_project.html)
-- https://en.wikipedia.org/wiki/Delaunay_triangulation
+- https://en.wikipedia.org/wiki/Delaunay\_triangulation

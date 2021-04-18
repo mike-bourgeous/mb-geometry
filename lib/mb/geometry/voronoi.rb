@@ -382,7 +382,7 @@ module MB::Geometry
     # :delaunay to use a pure Ruby implementation, or :rubyvor to use the
     # RubyVor gem.  The DELAUNAY_ENGINE environment variable may set to
     # 'rubyvor' or 'delaunay' to override this default.
-    DEFAULT_ENGINE = ENV['DELAUNAY_ENGINE']&.sub(/^:/, '')&.to_sym || :delaunay
+    DEFAULT_ENGINE = ENV['DELAUNAY_ENGINE']&.sub(/^:/, '')&.to_sym || :rubyvor
 
     # Returns the width of the #area_bounding_box.
     attr_reader :width
@@ -422,8 +422,9 @@ module MB::Geometry
     # for most of the non-RubyVor-provided features to work.  Set it to false
     # to generate a RubyVor SVG without the reflected copies.
     #
-    # The +:sigfigs+ parameter controls both input point deduplication and
-    # vertex coalescing.
+    # The +:sigfigs+ parameter controls vertex coalescing.  Input points are
+    # deduplicated by shifting if they are within 5 sigfigs of each other (any
+    # closer and RubyVor can't triangulate them correctly).
     #
     # Pass :rubyvor for +:engine+ to use the RubyVor gem for Delauney
     # triangulation, :delaunay to use a slower pure Ruby implemtation written
@@ -434,9 +435,23 @@ module MB::Geometry
       @cells = []
       @pointset = {}
       @reflect = reflect
+
       @sigfigs = sigfigs
       @sigscale = 10.0 ** (-@sigfigs)
       @squaredscale = (10 * @sigscale) ** 2
+
+      @dedupefigs = 5
+      @dedupescale = 0.001
+      @point_offsets = [
+        [@dedupescale, 0],
+        [@dedupescale, @dedupescale],
+        [0, @dedupescale],
+        [-@dedupescale, @dedupescale],
+        [-@dedupescale, 0],
+        [-@dedupescale, -@dedupescale],
+        [0, -@dedupescale],
+        [@dedupescale, -@dedupescale],
+      ]
 
       @user_xmin = nil
       @user_xmax = nil
@@ -570,7 +585,7 @@ module MB::Geometry
         y = y_or_nil
       end
 
-      p = find_safe_point(x.round(9), y.round(9))
+      p = find_safe_point(x.round(9), y.round(9), cells.length)
 
       Cell.new(voronoi: self, point: p, index: @cells.size, name: name, color: color).tap { |c|
         @cells << c
@@ -711,7 +726,7 @@ module MB::Geometry
           y = (y - new_ycenter) * hmul + old_ycenter
         end
 
-        new_point = find_safe_point(x, y)
+        new_point = find_safe_point(x, y, c.index)
         c.set_point_internal(*new_point)
 
         @pointset[new_point] = c
@@ -1026,7 +1041,7 @@ module MB::Geometry
       @pointset.delete(old_point)
 
       begin
-        new_point = find_safe_point(*new_point)
+        new_point = find_safe_point(*new_point, cell.index)
       rescue => e
         @pointset[old_point] = cell
         raise
@@ -1101,34 +1116,51 @@ module MB::Geometry
     end
 
     # If the given coordinates exist already, shifts them around until they are
-    # unique.  Returns a unique [x, y] that may safely be added to the diagram.
-    def find_safe_point(x, y)
+    # unique to within @dedupefigs significant figures.  Returns a unique [x,
+    # y] that may safely be added to the diagram.
+    def find_safe_point(x, y, idx)
       new_point = [
-        MB::M.sigfigs(x.to_f.round(@sigfigs + 1), @sigfigs),
-        MB::M.sigfigs(y.to_f.round(@sigfigs + 1), @sigfigs)
+        MB::M.sigfigs(x.to_f, @dedupefigs).round(@dedupefigs - 2),
+        MB::M.sigfigs(y.to_f, @dedupefigs).round(@dedupefigs - 2)
       ]
 
-      if @pointset.include?([x, y]) || @pointset.include?(new_point)
-        # Choose a range that is proportionate to the graph, if possible
-        randscale = 10.0 * @sigscale
-        randrange = MB::M.max_abs(*new_point).abs * randscale
-        randrange = randscale * [@xmax - @xmin, @ymax - @ymin].max if randrange == 0
-        randrange = randscale if randrange == 0
+      if @pointset.include?(new_point)
+        catch :deduplicated do
+          xoff, yoff = @point_offsets[idx % @point_offsets.length]
+          100.times do
+            new_point[0] += xoff
+            new_point[1] += yoff
+            new_point[0] = MB::M.sigfigs(new_point[0], @dedupefigs).round(@dedupefigs + 1)
+            new_point[1] = MB::M.sigfigs(new_point[1], @dedupefigs).round(@dedupefigs + 1)
 
-        # Gradually expand the range if somehow we land on another existing point
-        100.times do |t|
-          # 1.1 gives a final range of about +/- 1.2 times the original after
-          # 100 times if sigfigs is 5
-          randrange *= 1.1
-          range = -randrange..randrange
-          new_point[0] += rand(range)
-          new_point[1] += rand(range)
-          break unless @pointset.include?(new_point)
-        end
+            throw :deduplicated unless @pointset.include?(new_point)
+          end
 
-        # This is incredibly unlikely
-        if @pointset.include?(new_point)
-          raise 'Unable to find a unique point'
+          # Choose a range that is proportionate to the graph, if possible
+          @pointrand ||= Random.new(0)
+          randscale = @dedupescale
+          randrange = MB::M.max_abs(*new_point).abs * randscale
+          randrange = randscale * [@xmax - @xmin, @ymax - @ymin].max if randrange == 0
+          randrange = randscale if randrange == 0
+
+          # Gradually expand the range if somehow we land on another existing point
+          100.times do |t|
+            # 1.1 gives a final range of about +/- 1.2 times the original after
+            # 100 times if sigfigs is 5
+            randrange *= 1.1
+            range = -randrange..randrange
+            new_point[0] += @pointrand.rand(range)
+            new_point[1] += @pointrand.rand(range)
+            new_point[0] = MB::M.sigfigs(new_point[0].round(@dedupefigs + 1), @dedupefigs)
+            new_point[1] = MB::M.sigfigs(new_point[1].round(@dedupefigs + 1), @dedupefigs)
+
+            throw :deduplicated unless @pointset.include?(new_point)
+          end
+
+          # This is incredibly unlikely
+          if @pointset.include?(new_point)
+            raise "Unable to find a unique point for #{x}, #{y} at index #{idx}"
+          end
         end
       end
 
@@ -1208,6 +1240,8 @@ module MB::Geometry
         end
       end
 
+      @user_width = (@user_xmax || @xmax) - (@user_xmin || @xmin)
+      @user_height = (@user_ymax || @ymax) - (@user_ymin || @ymin)
       @width = @xmax - @xmin
       @height = @ymax - @ymin
       @x_center = (@xmax + @xmin) / 2.0

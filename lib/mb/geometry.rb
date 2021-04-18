@@ -141,7 +141,7 @@ module MB
       # is given and greater than 0.0, then the bounding box dimensions will be
       # multiplied by (1.0 + +expand+).
       def bounding_box(points, expand = nil)
-        raise 'No points were given' if points.empty?
+        raise ArgumentError, 'No points were given' if points.empty?
 
         xmin = Float::INFINITY
         ymin = Float::INFINITY
@@ -279,3 +279,4 @@ end
 require_relative 'geometry/generators'
 require_relative 'geometry/delaunay'
 require_relative 'geometry/voronoi'
+require_relative 'geometry/voronoi_animator'

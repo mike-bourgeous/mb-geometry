@@ -1,7 +1,9 @@
 {
   "generator": "polygon",
   "sides": 5,
-  "radius": 1,
+  "radius": 0.75,
+  "rotate": 255,
+  "clockwise": true,
   "names": [
     "P1",
     "P2",

@@ -269,19 +269,19 @@ RSpec.describe(MB::Geometry::Generators) do
         x1, y1 = plain_points.map { |p| p.values_at(:x, :y) }.transpose
         x2, y2 = annealed_points.map { |p| p.values_at(:x, :y) }.transpose
 
-        expect(x1.min.round(4)).to eq(x2.min.round(4))
-        expect(x1.max.round(4)).to eq(x2.max.round(4))
-        expect(y1.min.round(4)).to eq(y2.min.round(4))
-        expect(y1.max.round(4)).to eq(y2.max.round(4))
+        expect(x1.min.round(3)).to eq(x2.min.round(3))
+        expect(x1.max.round(3)).to eq(x2.max.round(3))
+        expect(y1.min.round(3)).to eq(y2.min.round(3))
+        expect(y1.max.round(3)).to eq(y2.max.round(3))
       end
     end
   end
 
   describe '.generate_from_file' do
     it 'can load a .yml file' do
-      file = File.expand_path('../../../../test_data/square.yml', __dir__)
+      file = File.expand_path('../../../../test_data/3gon_color.yml', __dir__)
       points = MB::Geometry::Generators.generate_from_file(file)
-      expect(points.length).to eq(4)
+      expect(points.length).to eq(3)
       expect(points[0][:color]).to eq([0.9, 0.3, 0.1])
     end
 
