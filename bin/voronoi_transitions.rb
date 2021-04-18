@@ -140,13 +140,11 @@ begin
 
   if bbox_aspect < aspect
     # Narrower; make wider
-  puts 'Make wider' # XXX
     width *= aspect / bbox_aspect
     xmax = xcenter + width / 2.0
     xmin = xcenter - width / 2.0
   elsif bbox_aspect > aspect
     # Wider; make taller
-    puts "Make taller"# XXX
     height *= bbox_aspect / aspect
     ymax = ycenter + height / 2.0
     ymin = ycenter - height / 2.0
