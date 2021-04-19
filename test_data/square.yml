@@ -1,8 +1,8 @@
 # A square
 bounding_box:
-  - -1.5
   - -1
-  - 1.5
+  - -1
+  - 1
   - 1
 points:
   - :x: -0.75

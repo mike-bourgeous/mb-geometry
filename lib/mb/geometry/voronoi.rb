@@ -1119,6 +1119,9 @@ module MB::Geometry
     # unique to within @dedupefigs significant figures.  Returns a unique [x,
     # y] that may safely be added to the diagram.
     def find_safe_point(x, y, idx)
+      # TODO: Use a different way to find duplicates that allows preserving at
+      # least some of the original precision of points, instead of aggressively
+      # rounding.
       new_point = [
         MB::M.sigfigs(x.to_f, @dedupefigs).round(@dedupefigs - 2),
         MB::M.sigfigs(y.to_f, @dedupefigs).round(@dedupefigs - 2)
