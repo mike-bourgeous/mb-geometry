@@ -72,7 +72,7 @@ module MB::Geometry
 
       # Used internally.  Returns an SVG state Hash containing the SVG size,
       # scaling ranges, and a String with an SVG header.
-      def start_svg(max_width, max_height)
+      def start_svg(max_width, max_height, voronoi_stroke: '#bbb', delaunay_stroke: '#222')
         max_aspect = max_width.to_f / max_height
         bounding_aspect = @user_width.to_f / height
 
@@ -103,12 +103,12 @@ module MB::Geometry
           }
           polygon.delaunay {
             fill: none;
-            stroke: #eee;
+            stroke: #{delaunay_stroke};
             stroke-width: 2px;
           }
           polygon.voronoi {
             fill: rgb(60,70,240);
-            stroke: #bbb;
+            stroke: #{voronoi_stroke};
             stroke-width: 2px;
           }
           polygon.neighbor {
@@ -286,7 +286,7 @@ module MB::Geometry
       # to the given +filename+.  The largest dimension of the area bounding
       # box is normalized to +size+ pixels.
       def save_svg(filename, max_width: 1000, max_height: 1000, voronoi: true, delaunay: false, reflect_delaunay: false, points: true)
-        svg = start_svg(max_width, max_height)
+        svg = start_svg(max_width, max_height, delaunay_stroke: voronoi ? '#eee' : '#222')
         add_voronoi_svg(svg, points && !delaunay) if voronoi # points added later if delaunay is true or voronoi false
         add_delaunay_svg(svg, reflect_delaunay) if delaunay
         add_points_svg(svg) if points && (delaunay || !voronoi)
