@@ -451,9 +451,9 @@ module MB::Geometry
       transition(@voronoi.cells.map(&:to_h).reverse, frames)
     end
 
-    # Cycles the points +offset+ points (so offset.abs points are moved from
-    # the end to the beginning if positive, or vice versa if negative).  See
-    # #transition.
+    # Cycles the points +offset+ points to the right (so offset.abs points are
+    # moved from the end to the beginning if positive, or vice versa if
+    # negative).  See #transition.
     def cycle(offset, frames)
       points = @voronoi.cells.map(&:to_h)
       transition(points.rotate(-offset), frames)

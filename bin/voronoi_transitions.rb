@@ -13,6 +13,7 @@ def usage
   puts "\nUsage: \e[1m#{$0}\e[0m output_image.(svg|mp4|mkv|webm|gif) filename.(json|yml|csv) [animate_frames [pause_frames]] [filename|__shuffle [animate_frames [pause_frames]] ...]"
   puts "\nModifiers (always start with two underscores and take the place of a filename):"
   puts "\t\e[1m__shuffle\e[0m - Randomizes the order of the points from the previously loaded file"
+  puts "\t\e[1m__cycle\e[0m - Shifts the order of the points from the previously loaded file by one"
   puts "\nExample:"
   puts "\t#{$0} /tmp/polygons.mkv test_data/square.yml 60 test_data/3gon.yml 60 test_data/pentagon.json 60 test_data/zero.csv 180 0"
   puts "\tThis will animate between polygons for 60 frames, pause for 60 frames each time, then fade out over 180."
@@ -48,12 +49,16 @@ class Transitionator
         end
 
       elsif arg =~ /\A__[a-z_]+\z/
+        raise "Modifier given before any graph filenames" if @transitions.empty?
+
         # This argument is a modifier (e.g. __shuffle) for existing data, instead
         # of a new file to render.
         case arg
         when '__shuffle'
-          raise "Modifier given before any graph filenames" if @transitions.empty?
           @transitions << { modifier: :shuffle, frames: nil, pause: nil }
+
+        when '__cycle'
+          @transitions << { modifier: :cycle, frames: nil, pause: nil }
 
         else
           raise "Invalid modifier #{arg.inspect}"
@@ -163,22 +168,28 @@ class Transitionator
       filename = t[:filename] || t[:modifier]
       frames = t[:frames] || 60
       pause = t[:pause] || t[:frames] || 60
-      puts "Transition to \e[1;34m#{t[:points]&.length}\e[0m point(s) from \e[1;33m#{filename.inspect}\e[0m over \e[1;35m#{frames}\e[0m frame(s)."
 
-      if t[:points]
+      puts "Transition to \e[1;34m#{t[:points]&.length || 'the same'}\e[0m point(s) from \e[1;33m#{filename.inspect}\e[0m over \e[1;35m#{frames}\e[0m frame(s)."
+
+      case t[:modifier]
+      when :shuffle
+        @anim.shuffle(frames)
+        animate
+
+      when :cycle
+        @anim.cycle(1, frames)
+        animate
+
+      else
         if frames == 0
           @v.replace_points(t[:points])
         else
           @anim.transition(t[:points], frames)
           animate
         end
-      elsif t[:modifier] == :shuffle
-        @anim.shuffle(frames)
-        animate
       end
 
       puts "Pause for \e[1;35m#{pause}\e[0m frame(s)."
-
       wait(pause)
     end
 
@@ -213,7 +224,15 @@ class Transitionator
 
   def save_next_frame
     filename = "#{@out_prefix}_#{"%0#{@digits}d" % @current_frame}.svg"
-    @v.save_svg(filename, max_width: @xres, max_height: @yres)
+    @v.save_svg(
+      filename,
+      max_width: @xres,
+      max_height: @yres,
+      voronoi: ENV['VORONOI'] != '0',
+      delaunay: ENV['DELAUNAY'] == '1',
+      circumcircles: ENV['CIRCUMCIRCLES'] == '1',
+      points: ENV['POINTS'] != '0'
+    )
     @current_frame += 1
   end
 end
