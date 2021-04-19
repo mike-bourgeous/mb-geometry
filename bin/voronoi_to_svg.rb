@@ -22,6 +22,6 @@ v.set_area_bounding_box(-32.0/9.0, -2, 32.0/9.0, 2)
 box = raw_hash[:expanded_box] || raw_hash[:bounding_box] || raw_hash[:original_box]
 v.set_area_bounding_box(*box) if box
 
-v.save_svg(ARGV[1])
+v.save_svg(ARGV[1], delaunay: ENV['DELAUNAY'] == '1')
 v.save_rubyvor_svg(ARGV[1] + '-rv.svg') if v.engine == :rubyvor
 v.save_delaunay_svg(ARGV[1] + '-dl-t.svg')

@@ -135,8 +135,16 @@ module MB::Geometry
 
       # Used internally.  Appends Delaunay triangles to the SVG in +svg_state+,
       # which should have been returned by #start_svg.
-      def add_delaunay_svg(svg_state)
-        triangles = delaunay_triangles.lazy.map { |t|
+      def add_delaunay_svg(svg_state, include_reflections)
+        if include_reflections != @reflect
+          v2 = MB::Geometry::Voronoi.new(@cells.map(&:point), engine: @engine, reflect: include_reflections)
+          v2.set_area_bounding_box(*area_bounding_box)
+          triangles = v2.delaunay_triangles
+        else
+          triangles = delaunay_triangles
+        end
+
+        triangles = triangles.lazy.map { |t|
           t.points.lazy.sort.flat_map { |x, y|
             scale_svg_point(svg_state, x, y)
           }
@@ -263,17 +271,24 @@ module MB::Geometry
       # to the area_bounding_box.  The SVG viewport will be max_width pixels
       # wide or max_height pixels high, depending on the aspect ratio of the
       # area bounding box.
-      def save_delaunay_svg(filename, max_width: 1000, max_height: 1000)
-        save_svg(filename, max_width: max_width, max_height: max_height, voronoi: false, delaunay: true)
+      def save_delaunay_svg(filename, max_width: 1000, max_height: 1000, reflect_delaunay: false)
+        save_svg(
+          filename,
+          max_width: max_width,
+          max_height: max_height,
+          voronoi: false,
+          delaunay: true,
+          reflect_delaunay: reflect_delaunay
+        )
       end
 
       # Saves a color-filled Voronoi diagram, cropped to the area_bounding_box,
       # to the given +filename+.  The largest dimension of the area bounding
       # box is normalized to +size+ pixels.
-      def save_svg(filename, max_width: 1000, max_height: 1000, voronoi: true, delaunay: false, points: true)
+      def save_svg(filename, max_width: 1000, max_height: 1000, voronoi: true, delaunay: false, reflect_delaunay: false, points: true)
         svg = start_svg(max_width, max_height)
         add_voronoi_svg(svg, points && !delaunay) if voronoi # points added later if delaunay is true or voronoi false
-        add_delaunay_svg(svg) if delaunay
+        add_delaunay_svg(svg, reflect_delaunay) if delaunay
         add_points_svg(svg) if points && (delaunay || !voronoi)
         end_svg(svg)
         write_svg(svg, filename)
