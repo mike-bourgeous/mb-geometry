@@ -12,4 +12,4 @@ points:
     y: 0.7
   - x: 1.2
     y: 0.4
-anneal: 1
+anneal: 0
