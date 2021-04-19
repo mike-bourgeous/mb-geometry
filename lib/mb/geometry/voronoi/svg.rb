@@ -103,7 +103,7 @@ module MB::Geometry
           }
           polygon.delaunay {
             fill: none;
-            stroke: #222;
+            stroke: #eee;
             stroke-width: 2px;
           }
           polygon.voronoi {
