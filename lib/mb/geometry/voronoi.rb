@@ -58,7 +58,7 @@ module MB::Geometry
       end
 
       # Returns the circumcircle (circumcenter plus radius) as [x, y,
-      # r] of this triangle.
+      # rsquared] of this triangle.
       def circumcircle
         @circumcircle ||= MB::Geometry.circumcircle(
           @points[0][0], @points[0][1],

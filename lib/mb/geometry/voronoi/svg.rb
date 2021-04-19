@@ -88,6 +88,8 @@ module MB::Geometry
         y_from = (@user_ymax || @ymax)..(@user_ymin || @ymin) # Reverse Y to convert Cartesian to screen coordinates
         x_to = 0..xres
         y_to = 0..yres
+        x_scale = xres.to_f / (x_from.begin - x_from.end)
+        y_scale = yres.to_f / (y_from.begin - y_from.end)
 
         svg = <<-XML
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 #{xres} #{yres}" overflow="hidden" preserveAspectRatio="xMinYMin meet">
@@ -119,6 +121,18 @@ module MB::Geometry
             stroke-opacity: 0.9;
             stroke-dasharray: 5;
           }
+          ellipse.circumcircle {
+            fill: none;
+            stroke: #23b;
+            stroke-width: 2px;
+            stroke-opacity: 0.5;
+          }
+          circle.circumcenter {
+            fill: #ccc;
+            opacity: 0.75;
+            stroke: #555;
+            stroke-width: 1px;
+          }
         </style>
         XML
 
@@ -127,8 +141,10 @@ module MB::Geometry
           yres: yres,
           x_from: x_from,
           x_to: x_to,
+          x_scale: x_scale,
           y_from: y_from,
           y_to: y_to,
+          y_scale: y_scale,
           svg: svg,
         }
       end
@@ -136,15 +152,7 @@ module MB::Geometry
       # Used internally.  Appends Delaunay triangles to the SVG in +svg_state+,
       # which should have been returned by #start_svg.
       def add_delaunay_svg(svg_state, include_reflections)
-        if include_reflections != @reflect
-          v2 = MB::Geometry::Voronoi.new(@cells.map(&:point), engine: @engine, reflect: include_reflections)
-          v2.set_area_bounding_box(*area_bounding_box)
-          triangles = v2.delaunay_triangles
-        else
-          triangles = delaunay_triangles
-        end
-
-        triangles = triangles.lazy.map { |t|
+        triangles = svg_delaunay_triangles(include_reflections).lazy.map { |t|
           t.points.lazy.sort.flat_map { |x, y|
             scale_svg_point(svg_state, x, y)
           }
@@ -153,6 +161,31 @@ module MB::Geometry
         triangles.each do |t|
           svg_state[:svg] << %Q{<polygon class="delaunay" points="#{t.join(' ')}" />\n}
         end
+      end
+
+      # Used internally.  Appends Delaunay triangles' circumcircles to the SVG
+      # in +svg_state+.
+      def add_circumcircles_svg(svg_state, include_reflections)
+        triangles = svg_delaunay_triangles(include_reflections)
+        circles = triangles.map { |t|
+          t.circumcircle
+        }.compact.uniq { |c|
+          [c[0].round(4), c[1].round(4), MB::M.sigfigs(c[2], 5)]
+        }
+
+        svg_state[:svg] << %Q{<g class="circumcircles">\n}
+
+        circles.each do |x, y, rsquared|
+          cx, cy = scale_svg_point(svg_state, x, y)
+          r = Math.sqrt(rsquared)
+          rx = r * svg_state[:x_scale]
+          ry = r * svg_state[:y_scale]
+
+          svg_state[:svg] << %Q{  <ellipse class="circumcircle" cx="#{cx}" cy="#{cy}" rx="#{rx}" ry="#{ry}" />\n}
+          svg_state[:svg] << %Q{  <circle class="circumcenter" cx="#{cx}" cy="#{cy}" r="4" />\n}
+        end
+
+        svg_state[:svg] << %Q{</g>\n}
       end
 
       # Used internally. Appends Voronoi cells to the SVG in +svg_state+, which
@@ -181,7 +214,7 @@ module MB::Geometry
             <polygon class="voronoi" style="fill:#{color};fill-opacity:#{a};stroke-opacity:#{a}" points="#{cv.join(' ')}" />
           XML
 
-          svg_state[:svg] << %Q{<circle class="cell" r="5" cx="#{cx}" cy="#{cy}" />\n} if include_points
+          svg_state[:svg] << %Q{  <circle class="cell" r="5" cx="#{cx}" cy="#{cy}" />\n} if include_points
 
           svg_state[:svg] << "</g>\n"
         end
@@ -285,10 +318,11 @@ module MB::Geometry
       # Saves a color-filled Voronoi diagram, cropped to the area_bounding_box,
       # to the given +filename+.  The largest dimension of the area bounding
       # box is normalized to +size+ pixels.
-      def save_svg(filename, max_width: 1000, max_height: 1000, voronoi: true, delaunay: false, reflect_delaunay: false, points: true)
+      def save_svg(filename, max_width: 1000, max_height: 1000, voronoi: true, delaunay: false, circumcircles: false, reflect_delaunay: false, points: true)
         svg = start_svg(max_width, max_height, delaunay_stroke: voronoi ? '#eee' : '#222')
         add_voronoi_svg(svg, points && !delaunay) if voronoi # points added later if delaunay is true or voronoi false
         add_delaunay_svg(svg, reflect_delaunay) if delaunay
+        add_circumcircles_svg(svg, reflect_delaunay) if circumcircles
         add_points_svg(svg) if points && (delaunay || !voronoi)
         end_svg(svg)
         write_svg(svg, filename)
@@ -312,6 +346,18 @@ module MB::Geometry
 
         end_svg(svg)
         write_svg(svg, filename)
+      end
+
+      private
+
+      def svg_delaunay_triangles(include_reflections)
+        if include_reflections != @reflect
+          v2 = MB::Geometry::Voronoi.new(@cells.map(&:point), engine: @engine, reflect: include_reflections)
+          v2.set_area_bounding_box(*area_bounding_box)
+          triangles = v2.delaunay_triangles
+        else
+          triangles = delaunay_triangles
+        end
       end
     end
   end

@@ -27,6 +27,6 @@ v.set_area_bounding_box(-2.0 * aspect, -2, 2.0 * aspect, 2)
 box = raw_hash[:expanded_box] || raw_hash[:bounding_box] || raw_hash[:original_box]
 v.set_area_bounding_box(*box) if box
 
-v.save_svg(ARGV[1], delaunay: ENV['DELAUNAY'] == '1', max_width: xres, max_height: yres)
+v.save_svg(ARGV[1], voronoi: ENV['VORONOI'] != '0', delaunay: ENV['DELAUNAY'] == '1', circumcircles: ENV['CIRCUMCIRCLES'] == '1', max_width: xres, max_height: yres)
 v.save_rubyvor_svg(ARGV[1] + '-rv.svg') if v.engine == :rubyvor
 v.save_delaunay_svg(ARGV[1] + '-dl-t.svg')
