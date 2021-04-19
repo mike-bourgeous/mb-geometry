@@ -178,8 +178,8 @@ module MB::Geometry
         circles.each do |x, y, rsquared|
           cx, cy = scale_svg_point(svg_state, x, y)
           r = Math.sqrt(rsquared)
-          rx = r * svg_state[:x_scale]
-          ry = r * svg_state[:y_scale]
+          rx = (r * svg_state[:x_scale]).abs
+          ry = (r * svg_state[:y_scale]).abs
 
           svg_state[:svg] << %Q{  <ellipse class="circumcircle" cx="#{cx}" cy="#{cy}" rx="#{rx}" ry="#{ry}" />\n}
           svg_state[:svg] << %Q{  <circle class="circumcenter" cx="#{cx}" cy="#{cy}" r="4" />\n}
