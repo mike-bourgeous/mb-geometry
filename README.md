@@ -72,6 +72,7 @@ From code:
 
 ```ruby
 require 'mb-geometry'
+
 # The Hash must be inside an Array to prevent it being interpreted as keyword args
 # Rotation is in degrees
 v = MB::Geometry::Voronoi.new([{ generator: :polygon, sides: 5, rotate: 30 }]) ; nil
@@ -81,11 +82,118 @@ v.save_svg('/tmp/pentagon_from_code.svg')
 v.save_delaunay_svg('/tmp/pentagon_delaunay.svg')
 ```
 
-### Area of a polygon
+### Voronoi points file format
 
-```ruby
-MB::Geometry.polygon_area([[0, 0], [1, 0], [1, 1], [0, 1]])
-# => 1.0
+The `bin/delaunay_triangulation.rb`, `bin/voronoi_to_svg.rb`, and
+`bin/voronoi_transitions.rb` tools all use a common file format to describe a
+Voronoi partition.  Any JSON, YAML, or CSV file that parses to an Array of X
+and Y coordinates is supported.  There is also an abbreviated syntax for
+generating polygons or random points.  See
+[MB::Geometry::Generators#generate\_from\_file][7] for more info.
+
+#### Raw array of points
+
+![Three simple points in a Voronoi diagram](readme_images/array.svg)
+
+|       JSON      |      YML   |    CSV   |
+| --------------- | ---------- | -------- |
+| ```json         | ```yml     | ```csv   |
+| [               | - [-1, 1]  | -1,1     |
+|   [-1, 1],      | - - 1.5    | 1.5,-0.5 |
+|   [1.5, -0.5],  |   - -0.5   | -1,0     |
+|   [-1, 0],      | - [-1, 0]  | ```      |
+| ]               | ```        |          |
+| ```             |            |          |
+
+#### Raw array of point hashes
+
+Point hashes may include a name and a color for a point.
+
+![Three points with custom colors](readme_images/hashes.svg)
+
+JSON:
+
+```json
+[
+  { "x": -1, "y": 1, "name": "A", "color": [0.1, 0.2, 0.5, 0.9] },
+  { "x": 1.5, "y": -0.5, "name": "B", "color": [0.6, 0.2, 0.5, 0.9] },
+  { "x": -1, "y": 0, "name": "C", "color": [0.3, 0.8, 0.4, 0.9] }
+]
+```
+
+```bash
+bin/voronoi_to_svg.rb /tmp/hashes.json /tmp/hashes.svg
+```
+
+#### Generators
+
+##### Random points
+
+Colors and names may be specified in separate Arrays.  Colors will be reused in
+a loop if there are more points than colors.
+
+The `anneal` option controls how many times points are moved toward their
+cell's center.  See `MB::Geometry::Voronoi#anneal`.
+
+![Random points with a deterministic seed](readme_images/random_points.svg)
+
+YML:
+
+```yml
+generator: :random
+count: 10
+seed: 3
+anneal: 1
+colors:
+  - [0.1, 0.2, 0.5, 0.9]
+  - [0.5, 0.3, 0.2, 0.9]
+names:
+  - "P0"
+  - "P1"
+  - "P2"
+  - "P3"
+  - "P4"
+  - "P5"
+  - "P6"
+  - "P7"
+  - "P8"
+  - "P9"
+```
+
+##### Multiple generators combined
+
+![Voronoi diagram generated from the YML below](readme_images/multi.svg)
+
+YML:
+
+```yml
+generator: :multi
+generators:
+  # Line segment generator
+  - generator: :segment
+    count: 5
+    from: [-3, -0.1]
+    to: [-2, -1]
+  # Polygon generator
+  - generator: :polygon
+    sides: 7
+    radius: 0.5
+    rotate: 45
+    clockwise: true
+  # Random points generator
+  - generator: :random
+    count: 10
+    seed: 3
+    xmin: 1.5
+    xmax: 3.25
+    ymin: -1.5
+    ymax: 1.5
+    anneal: 1
+  # Another segment
+  - generator: :segment
+    count: 5
+    from: [-3, 0.1]
+    to: [-2, 1]
 ```
 
 ### Delaunay triangulation
@@ -116,6 +224,17 @@ DELAUNAY_ENGINE=delaunay bin/triangulate.rb test_data/square.yml
 
 ```bash
 DELAUNAY_ENGINE=rubyvor bin/triangulate.rb test_data/square.yml
+```
+
+### Simple geometric functions
+
+See [`MB::Geometry`](tree/master/lib/mb/geometry.rb).
+
+#### Area of a polygon
+
+```ruby
+MB::Geometry.polygon_area([[0, 0], [1, 0], [1, 1], [0, 1]])
+# => 1.0
 ```
 
 ## Installation and usage
@@ -211,3 +330,4 @@ See `README-Delaunay.md` for Delaunay tringulation references.
 [4]: https://rubygems.org/gems/rubyvor
 [5]: https://github.com/abscondment/rubyvor
 [6]: https://blog.mikebourgeous.com/2021/04/18/animated-graphics-with-ruby-and-voronoi-partitions/
+[7]: https://github.com/mike-bourgeous/mb-geometry/blob/master/lib/mb/geometry/generators.rb#L80

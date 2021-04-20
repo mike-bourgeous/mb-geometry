@@ -77,6 +77,8 @@ module MB
         # by extension.  Do not load untrusted YAML.
         #
         # Yields the loaded data before generating points, if a block is given.
+        #
+        # See #generate for examples of the Hash syntax.
         def generate_from_file(filename)
           case File.extname(filename)
           when '.yaml', '.yml', '.YAML', '.YML'

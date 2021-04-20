@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" overflow="hidden" preserveAspectRatio="xMinYMin meet">
+<style>
+circle.cell {
+stroke: #bbb;
+fill: #222;
+}
+rect.neighbor {
+stroke: #aab;
+fill: #2727da;
+fill-opacity: 0.9;
+}
+polygon.delaunay {
+fill: none;
+stroke: #eee;
+stroke-width: 2px;
+}
+polygon.voronoi {
+fill: rgb(60,70,240);
+stroke: #bbb;
+stroke-width: 2px;
+}
+polygon.neighbor {
+fill: #6688ee;
+fill-opacity: 0.75;
+stroke: #4444bb;
+stroke-width: 3px;
+stroke-opacity: 0.9;
+stroke-dasharray: 5;
+}
+ellipse.circumcircle {
+fill: none;
+stroke: #23b;
+stroke-width: 2px;
+stroke-opacity: 0.5;
+}
+circle.circumcenter {
+fill: #ccc;
+opacity: 0.75;
+stroke: #555;
+stroke-width: 1px;
+}
+</style>
+<g id="cell-0">
+<polygon class="voronoi" style="fill:rgb(195, 61, 61);fill-opacity:1.0;stroke-opacity:1.0" points="0.0 270.0 117.6938 270.0 0.0 400.7708" />
+<circle class="cell" r="5" cx="75.0" cy="283.5" />
+</g>
+<g id="cell-1">
+<polygon class="voronoi" style="fill:rgb(186, 96, 71);fill-opacity:1.0;stroke-opacity:1.0" points="117.6938 270.0 178.7812 270.0 0.0 468.6458 0.0 400.7708" />
+<circle class="cell" r="5" cx="108.75" cy="313.875" />
+</g>
+<g id="cell-2">
+<polygon class="voronoi" style="fill:rgb(202, 129, 71);fill-opacity:1.0;stroke-opacity:1.0" points="178.7812 270.0 239.8688 270.0 0.0 536.5208 0.0 468.6458" />
+<circle class="cell" r="5" cx="142.5" cy="344.25" />
+</g>
+<g id="cell-3">
+<polygon class="voronoi" style="fill:rgb(178, 145, 79);fill-opacity:1.0;stroke-opacity:1.0" points="239.8688 270.0 274.4964 270.0 281.7992 291.2856 57.9563 540.0 0.0 540.0 0.0 536.5208" />
+<circle class="cell" r="5" cx="176.25" cy="374.625" />
+</g>
+<g id="cell-4">
+<polygon class="voronoi" style="fill:rgb(195, 181, 71);fill-opacity:1.0;stroke-opacity:1.0" points="281.7992 291.2856 344.3147 405.6853 382.9622 540.0 57.9563 540.0" />
+<circle class="cell" r="5" cx="210.0" cy="405.0" />
+</g>
+<g id="cell-5">
+<polygon class="voronoi" style="fill:rgb(171, 186, 58);fill-opacity:1.0;stroke-opacity:1.0" points="480.0519 269.9481 480.1231 269.8769 617.6858 221.8977 617.6019 309.6437 608.3488 350.7017" />
+<circle class="cell" r="5" cx="547.095" cy="277.56" />
+</g>
+<g id="cell-6">
+<polygon class="voronoi" style="fill:rgb(160, 202, 77);fill-opacity:1.0;stroke-opacity:1.0" points="479.9544 270.0456 480.0519 269.9481 608.3488 350.7017 611.1001 381.1262 563.354 540.0 510.6453 540.0" />
+<circle class="cell" r="5" cx="515.91" cy="327.105" />
+</g>
+<g id="cell-7">
+<polygon class="voronoi" style="fill:rgb(114, 178, 62);fill-opacity:1.0;stroke-opacity:1.0" points="479.9544 270.0456 510.6453 540.0 382.9622 540.0 344.3147 405.6853" />
+<circle class="cell" r="5" cx="457.725" cy="333.72" />
+</g>
+<g id="cell-8">
+<polygon class="voronoi" style="fill:rgb(111, 195, 87);fill-opacity:1.0;stroke-opacity:1.0" points="281.7992 291.2856 274.4964 270.0 284.2879 251.4796 286.8693 248.0939 479.9544 270.0456 344.3147 405.6853" />
+<circle class="cell" r="5" cx="416.28" cy="292.275" />
+</g>
+<g id="cell-9">
+<polygon class="voronoi" style="fill:rgb(67, 186, 67);fill-opacity:1.0;stroke-opacity:1.0" points="363.1457 84.2139 480.0519 269.9481 479.9544 270.0456 286.8693 248.0939" />
+<circle class="cell" r="5" cx="422.895" cy="234.09" />
+</g>
+<g id="cell-10">
+<polygon class="voronoi" style="fill:rgb(63, 202, 94);fill-opacity:1.0;stroke-opacity:1.0" points="363.1457 84.2139 384.9356 0.0 544.8301 0.0 555.653 53.3227 480.1231 269.8769 480.0519 269.9481" />
+<circle class="cell" r="5" cx="472.44" cy="202.905" />
+</g>
+<g id="cell-11">
+<polygon class="voronoi" style="fill:rgb(68, 178, 117);fill-opacity:1.0;stroke-opacity:1.0" points="555.653 53.3227 619.4725 216.7332 617.6858 221.8977 480.1231 269.8769" />
+<circle class="cell" r="5" cx="527.79" cy="222.21" />
+</g>
+<g id="cell-12">
+<polygon class="voronoi" style="fill:rgb(68, 195, 152);fill-opacity:1.0;stroke-opacity:1.0" points="692.2372 0.0 813.0324 0.0 846.3664 168.2762 816.1333 198.9905 749.3377 191.7772" />
+<circle class="cell" r="5" cx="780.375" cy="131.895" />
+</g>
+<g id="cell-13">
+<polygon class="voronoi" style="fill:rgb(83, 186, 174);fill-opacity:1.0;stroke-opacity:1.0" points="714.6785 218.6762 749.3377 191.7772 816.1333 198.9905 833.45 286.1781 825.7082 292.9706 732.2598 285.2341" />
+<circle class="cell" r="5" cx="766.875" cy="256.905" />
+</g>
+<g id="cell-14">
+<polygon class="voronoi" style="fill:rgb(73, 187, 202);fill-opacity:1.0;stroke-opacity:1.0" points="813.0324 0.0 960.0 0.0 960.0 177.1693 846.3664 168.2762" />
+<circle class="cell" r="5" cx="893.505" cy="109.485" />
+</g>
+<g id="cell-15">
+<polygon class="voronoi" style="fill:rgb(55, 137, 178);fill-opacity:1.0;stroke-opacity:1.0" points="611.1001 381.1262 724.9095 344.1134 789.5731 382.5857 827.9319 540.0 563.354 540.0" />
+<circle class="cell" r="5" cx="720.3" cy="388.53" />
+</g>
+<g id="cell-16">
+<polygon class="voronoi" style="fill:rgb(74, 128, 195);fill-opacity:1.0;stroke-opacity:1.0" points="617.6019 309.6437 731.8553 285.957 724.9095 344.1134 611.1001 381.1262 608.3488 350.7017" />
+<circle class="cell" r="5" cx="695.055" cy="310.905" />
+</g>
+<g id="cell-17">
+<polygon class="voronoi" style="fill:rgb(65, 92, 186);fill-opacity:1.0;stroke-opacity:1.0" points="617.6858 221.8977 619.4725 216.7332 714.6785 218.6762 732.2598 285.2341 731.8553 285.957 617.6019 309.6437" />
+<circle class="cell" r="5" cx="688.17" cy="277.695" />
+</g>
+<g id="cell-18">
+<polygon class="voronoi" style="fill:rgb(90, 90, 202);fill-opacity:1.0;stroke-opacity:1.0" points="825.7082 292.9706 833.45 286.1781 960.0 317.187 960.0 540.0 827.9319 540.0 789.5731 382.5857" />
+<circle class="cell" r="5" cx="853.815" cy="355.995" />
+</g>
+<g id="cell-19">
+<polygon class="voronoi" style="fill:rgb(90, 64, 178);fill-opacity:1.0;stroke-opacity:1.0" points="816.1333 198.9905 846.3664 168.2762 960.0 177.1693 960.0 317.187 833.45 286.1781" />
+<circle class="cell" r="5" cx="883.785" cy="233.685" />
+</g>
+<g id="cell-20">
+<polygon class="voronoi" style="fill:rgb(120, 61, 195);fill-opacity:1.0;stroke-opacity:1.0" points="555.653 53.3227 544.8301 0.0 692.2372 0.0 749.3377 191.7772 714.6785 218.6762 619.4725 216.7332" />
+<circle class="cell" r="5" cx="690.6" cy="158.625" />
+</g>
+<g id="cell-21">
+<polygon class="voronoi" style="fill:rgb(147, 71, 186);fill-opacity:1.0;stroke-opacity:1.0" points="731.8553 285.957 732.2598 285.2341 825.7082 292.9706 789.5731 382.5857 724.9095 344.1134" />
+<circle class="cell" r="5" cx="761.745" cy="318.87" />
+</g>
+<g id="cell-22">
+<polygon class="voronoi" style="fill:rgb(187, 71, 202);fill-opacity:1.0;stroke-opacity:1.0" points="0.0 139.2292 117.6938 270.0 0.0 270.0" />
+<circle class="cell" r="5" cx="75.0" cy="256.5" />
+</g>
+<g id="cell-23">
+<polygon class="voronoi" style="fill:rgb(178, 79, 167);fill-opacity:1.0;stroke-opacity:1.0" points="0.0 139.2292 0.0 71.3542 178.7812 270.0 117.6938 270.0" />
+<circle class="cell" r="5" cx="108.75" cy="226.125" />
+</g>
+<g id="cell-24">
+<polygon class="voronoi" style="fill:rgb(195, 71, 153);fill-opacity:1.0;stroke-opacity:1.0" points="0.0 71.3542 0.0 3.4792 239.8688 270.0 178.7812 270.0" />
+<circle class="cell" r="5" cx="142.5" cy="195.75" />
+</g>
+<g id="cell-25">
+<polygon class="voronoi" style="fill:rgb(186, 58, 115);fill-opacity:1.0;stroke-opacity:1.0" points="0.0 3.4792 0.0 0.0 57.9563 0.0 284.2879 251.4796 274.4964 270.0 239.8688 270.0" />
+<circle class="cell" r="5" cx="176.25" cy="165.375" />
+</g>
+<g id="cell-26">
+<polygon class="voronoi" style="fill:rgb(202, 77, 105);fill-opacity:1.0;stroke-opacity:1.0" points="57.9563 0.0 384.9356 0.0 363.1457 84.2139 286.8693 248.0939 284.2879 251.4796" />
+<circle class="cell" r="5" cx="210.0" cy="135.0" />
+</g>
+</svg>
