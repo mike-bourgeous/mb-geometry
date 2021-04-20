@@ -95,15 +95,37 @@ generating polygons or random points.  See
 
 ![Three simple points in a Voronoi diagram](readme_images/array.svg)
 
-|       JSON      |      YML   |    CSV   |
-| --------------- | ---------- | -------- |
-| ```json         | ```yml     | ```csv   |
-| [               | - [-1, 1]  | -1,1     |
-|   [-1, 1],      | - - 1.5    | 1.5,-0.5 |
-|   [1.5, -0.5],  |   - -0.5   | -1,0     |
-|   [-1, 0],      | - [-1, 0]  | ```      |
-| ]               | ```        |          |
-| ```             |            |          |
+<table>
+    <tr>
+        <th>JSON</th><th>YML</th><th>CSV</th>
+    </tr>
+    <tr>
+        <td>
+            <pre>
+[
+  [-1, 1],
+  [1.5, -0.5],
+  [-1, 0],
+]
+            </pre>
+        </td>
+        <td>
+            <pre>
+- [-1, 1]
+- - 1.5  
+  - -0.5
+- [-1, 0]
+            </pre>
+        </td>
+        <td>
+            <pre>
+-1,1
+1.5,-0.5
+-1,0
+            </pre>
+        </td>
+    </tr>
+</table>
 
 #### Raw array of point hashes
 
