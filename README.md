@@ -84,7 +84,7 @@ v.save_delaunay_svg('/tmp/pentagon_delaunay.svg')
 
 ### Voronoi points file format
 
-The `bin/delaunay_triangulation.rb`, `bin/voronoi_to_svg.rb`, and
+The `bin/triangulate.rb`, `bin/voronoi_to_svg.rb`, and
 `bin/voronoi_transitions.rb` tools all use a common file format to describe a
 Voronoi partition.  Any JSON, YAML, or CSV file that parses to an Array of X
 and Y coordinates is supported.  There is also an abbreviated syntax for
@@ -245,7 +245,7 @@ DELAUNAY_ENGINE=rubyvor bin/triangulate.rb test_data/square.yml
 
 ### Simple geometric functions
 
-See [`MB::Geometry`](tree/master/lib/mb/geometry.rb).
+See [`MB::Geometry`](blob/master/lib/mb/geometry.rb).
 
 #### Area of a polygon
 
