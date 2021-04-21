@@ -296,6 +296,8 @@ module MB
       end
     end
   end
+
+  Geo = Geometry
 end
 
 require_relative 'geometry/generators'
