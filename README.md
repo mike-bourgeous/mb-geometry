@@ -151,7 +151,8 @@ Colors and names may be specified in separate Arrays.  Colors will be reused in
 a loop if there are more points than colors.
 
 The `anneal` option controls how many times points are moved toward their
-cell's center.  See `MB::Geometry::Voronoi#anneal`.
+cell's center.  The `bounding_box` option controls the maximum space in which
+the points may expand.  See `MB::Geometry::Voronoi#anneal`.
 
 ![Random points with a deterministic seed](readme_images/random_points.svg)
 
