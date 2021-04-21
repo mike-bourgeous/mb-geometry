@@ -139,6 +139,42 @@ RSpec.describe MB::Geometry do
     end
   end
 
+  describe '.scale_matrix' do
+    it 'returns a matrix matching the expected composed matrix' do
+      for xscale in (-2..2).step(0.5)
+        for yscale in (-2..2).step(0.5)
+          for xcenter in (-2..2).step(0.5)
+            for ycenter in (-2..2).step(0.5)
+              pre_translate = Matrix[[1, 0, -xcenter], [0, 1, -ycenter], [0, 0, 1]]
+              scale = Matrix[[xscale, 0, 0], [0, yscale, 0], [0, 0, 1]]
+              post_translate = Matrix[[1, 0, xcenter], [0, 1, ycenter], [0, 0, 1]]
+              composed = post_translate * scale * pre_translate
+
+              result = MB::Geometry.scale_matrix(
+                xscale: xscale,
+                yscale: yscale,
+                xcenter: xcenter,
+                ycenter: ycenter
+              )
+
+              expect(result.round(6)).to eq(composed.round(6))
+            end
+          end
+        end
+      end
+    end
+
+    it 'defaults xscale to yscale' do
+      m = MB::Geometry.scale_matrix(xscale: nil, yscale: 2)
+      expect(m[0, 0]).to eq(2)
+    end
+
+    it 'defaults yscale to xscale' do
+      m = MB::Geometry.scale_matrix(xscale: 4)
+      expect(m[1, 1]).to eq(4)
+    end
+  end
+
   pending '.dot'
   pending '.clip_segment'
   pending '.distance_to_line'

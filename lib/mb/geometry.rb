@@ -272,6 +272,28 @@ module MB
 
         sum.map { |v| v.to_f / points.size }
       end
+
+      # Returns a Matrix that will scale 2D vectors by +:xscale+/+:yscale+
+      # (each defaults to copying the other, but at least one must be
+      # specified) centered around the point (+:xcenter+, +:ycenter+).
+      # Multiply with an augmented Vector to apply the transformation.
+      #
+      # Example:
+      #     v = Vector[2, 2, 1] # Third/augmented element (w) must be 1
+      #     m = MB::Geometry.scale_matrix(xscale: 3, yscale: 2, xcenter: 1, ycenter: 1)
+      #     m * v
+      #     # => Vector[4, 3, 1] # x, y, w
+      def scale_matrix(xscale:, yscale: nil, xcenter: 0, ycenter: 0)
+        raise "Specify at least one of :xscale and :yscale" if !(xscale || yscale)
+        xscale ||= yscale
+        yscale ||= xscale
+
+        Matrix[
+          [xscale, 0, -xcenter * (xscale - 1)],
+          [0, yscale, -ycenter * (yscale - 1)],
+          [0, 0, 1]
+        ]
+      end
     end
   end
 end
