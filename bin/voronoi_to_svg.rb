@@ -34,8 +34,8 @@ when nil, ''
 when /\A-?\d+(\.\d+)?\z/
   polyscale = ENV['POLYSCALE'].to_f
 
-when /\A\[\s*(?<x>-?\d+(\.\d+)?)\s*,\s*(?<Y>-?\d+(\.\d+)?)\s*\]\z/
-  polyscale = [x.to_f, y.to_f]
+when /\A\[\s*(?<x>-?\d+(\.\d+)?)\s*,\s*(?<y>-?\d+(\.\d+)?)\s*\]\z/
+  polyscale = [$~[:x].to_f, $~[:y].to_f]
 
 else
   raise "Unknown format for POLYSCALE: #{ENV['POLYSCALE'].inspect}"
