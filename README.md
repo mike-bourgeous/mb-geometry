@@ -84,11 +84,12 @@ v.save_delaunay_svg('/tmp/pentagon_delaunay.svg')
 
 ### Voronoi points file format
 
-The `bin/delaunay_triangulation.rb`, `bin/voronoi_to_svg.rb`, and
+The `bin/triangulate.rb`, `bin/voronoi_to_svg.rb`, and
 `bin/voronoi_transitions.rb` tools all use a common file format to describe a
 Voronoi partition.  Any JSON, YAML, or CSV file that parses to an Array of X
 and Y coordinates is supported.  There is also an abbreviated syntax for
-generating polygons or random points.  See
+generating polygons or random points.  The file format is documented below in
+the [Voronoi points file format](#voronoi-points-file-format) section.  See
 [MB::Geometry::Generators#generate\_from\_file][7] for more info.
 
 #### Raw array of points
@@ -150,7 +151,8 @@ Colors and names may be specified in separate Arrays.  Colors will be reused in
 a loop if there are more points than colors.
 
 The `anneal` option controls how many times points are moved toward their
-cell's center.  See `MB::Geometry::Voronoi#anneal`.
+cell's center.  The `bounding_box` option controls the maximum space in which
+the points may expand.  See `MB::Geometry::Voronoi#anneal`.
 
 ![Random points with a deterministic seed](readme_images/random_points.svg)
 
@@ -161,6 +163,7 @@ generator: :random
 count: 10
 seed: 3
 anneal: 1
+bounding_box: [-3, -2, 3, 2]
 colors:
   - [0.1, 0.2, 0.5, 0.9]
   - [0.5, 0.3, 0.2, 0.9]
@@ -175,6 +178,10 @@ names:
   - "P7"
   - "P8"
   - "P9"
+```
+
+```bash
+LABELS=1 bin/voronoi_to_svg.rb /tmp/random_points.yml /tmp/random_points.svg
 ```
 
 ##### Multiple generators combined
@@ -245,7 +252,7 @@ DELAUNAY_ENGINE=rubyvor bin/triangulate.rb test_data/square.yml
 
 ### Simple geometric functions
 
-See [`MB::Geometry`](tree/master/lib/mb/geometry.rb).
+See [`MB::Geometry`](blob/master/lib/mb/geometry.rb).
 
 #### Area of a polygon
 

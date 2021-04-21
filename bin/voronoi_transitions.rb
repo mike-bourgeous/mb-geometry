@@ -231,7 +231,8 @@ class Transitionator
       voronoi: ENV['VORONOI'] != '0',
       delaunay: ENV['DELAUNAY'] == '1',
       circumcircles: ENV['CIRCUMCIRCLES'] == '1',
-      points: ENV['POINTS'] != '0'
+      points: ENV['POINTS'] != '0',
+      labels: ENV['LABELS'] == '1'
     )
     @current_frame += 1
   end

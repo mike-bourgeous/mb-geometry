@@ -332,5 +332,7 @@ module MB
         end
       end
     end
+
+    Gen = Generators
   end
 end

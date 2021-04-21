@@ -27,6 +27,29 @@ v.set_area_bounding_box(-2.0 * aspect, -2, 2.0 * aspect, 2)
 box = raw_hash[:expanded_box] || raw_hash[:bounding_box] || raw_hash[:original_box]
 v.set_area_bounding_box(*box) if box
 
-v.save_svg(ARGV[1], voronoi: ENV['VORONOI'] != '0', delaunay: ENV['DELAUNAY'] == '1', circumcircles: ENV['CIRCUMCIRCLES'] == '1', max_width: xres, max_height: yres)
+case ENV['POLYSCALE']
+when nil, ''
+  polyscale = 1
+
+when /\A-?\d+(\.\d+)?\z/
+  polyscale = ENV['POLYSCALE'].to_f
+
+when /\A\[\s*(?<x>-?\d+(\.\d+)?)\s*,\s*(?<y>-?\d+(\.\d+)?)\s*\]\z/
+  polyscale = [$~[:x].to_f, $~[:y].to_f]
+
+else
+  raise "Unknown format for POLYSCALE: #{ENV['POLYSCALE'].inspect}"
+end
+
+v.save_svg(
+  ARGV[1],
+  voronoi: ENV['VORONOI'] != '0',
+  delaunay: ENV['DELAUNAY'] == '1',
+  circumcircles: ENV['CIRCUMCIRCLES'] == '1',
+  max_width: xres,
+  max_height: yres,
+  polyscale: polyscale,
+  labels: ENV['LABELS'] == '1'
+)
 v.save_rubyvor_svg(ARGV[1] + '-rv.svg') if v.engine == :rubyvor
 v.save_delaunay_svg(ARGV[1] + '-dl-t.svg')
