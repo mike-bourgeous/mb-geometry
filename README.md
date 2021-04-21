@@ -88,7 +88,8 @@ The `bin/triangulate.rb`, `bin/voronoi_to_svg.rb`, and
 `bin/voronoi_transitions.rb` tools all use a common file format to describe a
 Voronoi partition.  Any JSON, YAML, or CSV file that parses to an Array of X
 and Y coordinates is supported.  There is also an abbreviated syntax for
-generating polygons or random points.  See
+generating polygons or random points.  The file format is documented below in
+the [Voronoi points file format](#voronoi-points-file-format) section.  See
 [MB::Geometry::Generators#generate\_from\_file][7] for more info.
 
 #### Raw array of points
