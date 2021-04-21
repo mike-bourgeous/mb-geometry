@@ -162,6 +162,7 @@ generator: :random
 count: 10
 seed: 3
 anneal: 1
+bounding_box: [-3, -2, 3, 2]
 colors:
   - [0.1, 0.2, 0.5, 0.9]
   - [0.5, 0.3, 0.2, 0.9]
@@ -176,6 +177,10 @@ names:
   - "P7"
   - "P8"
   - "P9"
+```
+
+```bash
+LABELS=1 bin/voronoi_to_svg.rb /tmp/random_points.yml /tmp/random_points.svg
 ```
 
 ##### Multiple generators combined

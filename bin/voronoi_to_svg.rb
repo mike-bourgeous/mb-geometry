@@ -48,7 +48,8 @@ v.save_svg(
   circumcircles: ENV['CIRCUMCIRCLES'] == '1',
   max_width: xres,
   max_height: yres,
-  polyscale: polyscale
+  polyscale: polyscale,
+  labels: ENV['LABELS'] == '1'
 )
 v.save_rubyvor_svg(ARGV[1] + '-rv.svg') if v.engine == :rubyvor
 v.save_delaunay_svg(ARGV[1] + '-dl-t.svg')

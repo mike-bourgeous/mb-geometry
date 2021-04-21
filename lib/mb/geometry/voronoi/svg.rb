@@ -72,7 +72,7 @@ module MB::Geometry
 
       # Used internally.  Returns an SVG state Hash containing the SVG size,
       # scaling ranges, and a String with an SVG header.
-      def start_svg(max_width, max_height, voronoi_stroke: '#bbb', delaunay_stroke: '#222', polyscale: 1)
+      def start_svg(max_width, max_height, voronoi_stroke: '#bbb', delaunay_stroke: '#222', polyscale: 1, labels: false)
         max_aspect = max_width.to_f / max_height
         bounding_aspect = @user_width.to_f / height
 
@@ -97,6 +97,12 @@ module MB::Geometry
           circle.cell {
             stroke: #bbb;
             fill: #222;
+          }
+          text.cell {
+            font: bold 21px sans-serif;
+            fill: #222;
+            stroke: #bbb;
+            stroke-width: 0.5px;
           }
           rect.neighbor {
             stroke: #aab;
@@ -146,6 +152,7 @@ module MB::Geometry
           y_to: y_to,
           y_scale: y_scale,
           polyscale: polyscale, # Voronoi polygon scaling factor (number or 2D array)
+          labels: labels,
           svg: svg,
         }
       end
@@ -215,7 +222,7 @@ module MB::Geometry
             <polygon class="voronoi" style="fill:#{color};fill-opacity:#{a};stroke-opacity:#{a}" points="#{cv.join(' ')}" />
           XML
 
-          svg_state[:svg] << %Q{  <circle class="cell" r="5" cx="#{cx}" cy="#{cy}" />\n} if include_points
+          add_one_point_svg(svg_state, c)
 
           svg_state[:svg] << "</g>\n"
         end
@@ -252,11 +259,19 @@ module MB::Geometry
         svg_state[:svg] << neighbor_svg
       end
 
-      # Used internally.  Adds circles for each cell point.
+      # Used internally.  Adds circles and labels for each cell point.
       def add_points_svg(svg_state)
         @cells.each_with_index do |c, idx|
-          cx, cy = scale_svg_point(svg_state, c.x, c.y)
-          svg_state[:svg] << %Q{<circle class="cell" r="5" cx="#{cx}" cy="#{cy}" />\n}
+          add_one_point_svg(svg_state, c)
+        end
+      end
+
+      # Used internally.  Adds circles and labels for a single cell.
+      def add_one_point_svg(svg_state, cell)
+        cx, cy = scale_svg_point(svg_state, cell.x, cell.y)
+        svg_state[:svg] << %Q{<circle class="cell" r="5" cx="#{cx}" cy="#{cy}" />\n}
+        unless !svg_state[:labels] || cell.name == false || cell.name.nil?
+          svg_state[:svg] << %Q{<text class="cell" x="#{cx + 7}" y="#{cy - 7}">#{cell.name.to_s.encode(xml: :text)}</text>\n}
         end
       end
 
@@ -305,14 +320,15 @@ module MB::Geometry
       # to the area_bounding_box.  The SVG viewport will be max_width pixels
       # wide or max_height pixels high, depending on the aspect ratio of the
       # area bounding box.
-      def save_delaunay_svg(filename, max_width: 1000, max_height: 1000, reflect_delaunay: false)
+      def save_delaunay_svg(filename, max_width: 1000, max_height: 1000, reflect_delaunay: false, labels: false)
         save_svg(
           filename,
           max_width: max_width,
           max_height: max_height,
           voronoi: false,
           delaunay: true,
-          reflect_delaunay: reflect_delaunay
+          reflect_delaunay: reflect_delaunay,
+          labels: labels
         )
       end
 
@@ -323,8 +339,8 @@ module MB::Geometry
       # Voronoi polygons will be scaled around their input point by
       # +:polyscale+, which may be a 2D array to specify different scaling
       # factors for X and Y.
-      def save_svg(filename, max_width: 1000, max_height: 1000, voronoi: true, delaunay: false, circumcircles: false, reflect_delaunay: false, points: true, polyscale: 1)
-        svg = start_svg(max_width, max_height, delaunay_stroke: voronoi ? '#eee' : '#222', polyscale: polyscale)
+      def save_svg(filename, max_width: 1000, max_height: 1000, voronoi: true, delaunay: false, circumcircles: false, reflect_delaunay: false, points: true, polyscale: 1, labels: false)
+        svg = start_svg(max_width, max_height, delaunay_stroke: voronoi ? '#eee' : '#222', polyscale: polyscale, labels: labels)
         add_voronoi_svg(svg, points && !delaunay) if voronoi # points added later if delaunay is true or voronoi false
         add_delaunay_svg(svg, reflect_delaunay) if delaunay
         add_circumcircles_svg(svg, reflect_delaunay) if circumcircles
