@@ -306,6 +306,34 @@ module MB::Geometry
         )
       end
 
+      # Returns an Array of points (each a 2D numeric Array) representing the
+      # enclosing Voronoi polygon of this Cell, scaled by +xscale+ and +yscale+
+      # around the Cell's input point.  This can be used to shrink the Voronoi
+      # polygons of a Voronoi diagram around the input points, creating gaps
+      # between them.
+      #
+      # If one of the scale parameters is nil, it will be copied from the
+      # other.
+      #
+      # If +:centroid+ is true, then the scaling will be centered around the
+      # polygon's center point, instead of the Cell's input point.
+      #
+      # See MB::Geometry.scale_matrix.
+      def scaled_polygon(xscale = 1, yscale = nil, centroid: false)
+        @vertex_points ||= voronoi_vertices.map(&:point)
+
+        xscale ||= yscale
+        yscale ||= xscale
+
+        return @vertex_points if xscale == 1 && yscale == 1
+
+        xc, yc = *(centroid ? self.centroid : @point)
+        m = MB::Geometry.scale_matrix(xscale: xscale, yscale: yscale, xcenter: xc, ycenter: yc)
+        @vertex_points.map { |p|
+          (m * Vector[*p, 1])[0..1]
+        }
+      end
+
       # Returns the neighboring Cells of this cell in the Delaunay
       # triangulation.
       def neighbors
@@ -355,6 +383,7 @@ module MB::Geometry
         @neighbors = nil
         @delaunay_triangles = nil
         @voronoi_vertices = nil
+        @vertex_points = nil
       end
 
       # A short description of the cell.

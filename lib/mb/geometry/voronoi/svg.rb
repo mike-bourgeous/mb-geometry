@@ -72,7 +72,7 @@ module MB::Geometry
 
       # Used internally.  Returns an SVG state Hash containing the SVG size,
       # scaling ranges, and a String with an SVG header.
-      def start_svg(max_width, max_height, voronoi_stroke: '#bbb', delaunay_stroke: '#222')
+      def start_svg(max_width, max_height, voronoi_stroke: '#bbb', delaunay_stroke: '#222', polyscale: 1)
         max_aspect = max_width.to_f / max_height
         bounding_aspect = @user_width.to_f / height
 
@@ -145,6 +145,7 @@ module MB::Geometry
           y_from: y_from,
           y_to: y_to,
           y_scale: y_scale,
+          polyscale: polyscale, # Voronoi polygon scaling factor (number or 2D array)
           svg: svg,
         }
       end
@@ -203,7 +204,7 @@ module MB::Geometry
         @cells.each_with_index do |c, idx|
           cx, cy = scale_svg_point(svg_state, c.x, c.y)
 
-          cv = c.voronoi_vertices.map { |v| scale_svg_point(svg_state, *v.point) }.uniq.flatten
+          cv = c.scaled_polygon(*svg_state[:polyscale]).map { |p| scale_svg_point(svg_state, *p) }.uniq.flatten
 
           r, g, b, a = c.color
           a ||= 1.0
@@ -318,8 +319,12 @@ module MB::Geometry
       # Saves a color-filled Voronoi diagram, cropped to the area_bounding_box,
       # to the given +filename+.  The largest dimension of the area bounding
       # box is normalized to +size+ pixels.
-      def save_svg(filename, max_width: 1000, max_height: 1000, voronoi: true, delaunay: false, circumcircles: false, reflect_delaunay: false, points: true)
-        svg = start_svg(max_width, max_height, delaunay_stroke: voronoi ? '#eee' : '#222')
+      #
+      # Voronoi polygons will be scaled around their input point by
+      # +:polyscale+, which may be a 2D array to specify different scaling
+      # factors for X and Y.
+      def save_svg(filename, max_width: 1000, max_height: 1000, voronoi: true, delaunay: false, circumcircles: false, reflect_delaunay: false, points: true, polyscale: 1)
+        svg = start_svg(max_width, max_height, delaunay_stroke: voronoi ? '#eee' : '#222', polyscale: polyscale)
         add_voronoi_svg(svg, points && !delaunay) if voronoi # points added later if delaunay is true or voronoi false
         add_delaunay_svg(svg, reflect_delaunay) if delaunay
         add_circumcircles_svg(svg, reflect_delaunay) if circumcircles
