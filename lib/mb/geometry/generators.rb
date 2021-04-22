@@ -221,6 +221,46 @@ module MB
               { x: p[0], y: p[1] }
             }
 
+          when :grid
+            columns = spec[:columns]
+            raise "Number of columns must be a positive Integer for :grid" unless columns.is_a?(Integer) && columns > 0
+
+            rows = spec[:rows]
+            raise "Number of rows must be a positive Integer for :grid" unless rows.is_a?(Integer) && rows > 0
+
+            odd_offset = spec[:odd_offset] || 0
+            raise "Offset for odd rows must be a Numeric for :grid" unless odd_offset.is_a?(Numeric)
+
+            odd_extra = spec[:odd_extra] || 0
+            raise "Extra columns for odd rows must be an Integer for :grid" unless odd_extra.is_a?(Integer)
+
+            # TODO: Maybe a declarative way to read and validate parameters that shares code across generators?
+            xmin = spec[:xmin] || -1.0
+            raise "Xmin must be a Numeric for :grid" unless xmin.is_a?(Numeric)
+
+            ymin = spec[:ymin] || -1.0
+            raise "Ymin must be a Numeric for :grid" unless ymin.is_a?(Numeric)
+
+            xmax = spec[:xmax] || 1.0
+            raise "Xmax must be a Numeric for :grid" unless xmax.is_a?(Numeric)
+
+            ymax = spec[:ymax] || 1.0
+            raise "Ymax must be a Numeric for :grid" unless ymax.is_a?(Numeric)
+
+            points = []
+
+            for row in 0...rows
+              offset = row.odd? ? odd_offset : 0
+              extra = row.odd? ? odd_extra : 0
+
+              for col in 0...(columns + extra)
+                x = MB::M.scale(col, 0..(columns - 1), xmin..xmax) + offset
+                y = MB::M.scale(row, 0..(rows - 1), ymax..ymin)
+
+                points << { x: x, y: y }
+              end
+            end
+
           when :random
             count = spec[:count]
             raise "Count must be an Integer for :random" unless count.is_a?(Integer)
@@ -330,7 +370,7 @@ module MB
             end
           end
 
-          # TODO: rotation, then translation
+          # TODO: scaling, then rotation, then translation
 
           if shuffle = spec[:shuffle]
             raise "Shuffle must be true or false, if given" unless shuffle == true || shuffle == false
