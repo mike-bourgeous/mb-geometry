@@ -234,7 +234,7 @@ module MB::Geometry
 
       def initialize(base:, cell:)
         raise "Base must be a VoronoiAnimator" unless base.is_a?(VoronoiAnimator)
-        raise "Cell must be a MB::Geometry::Voronoi::Cell" unless cell.is_a?(MB::Geometry::Voronoi::Cell)
+        raise "Cell must be a MB::Geometry::Voronoi::Cell" unless cell.nil? || cell.is_a?(MB::Geometry::Voronoi::Cell)
 
         @base = base
         @cell = cell
@@ -249,36 +249,44 @@ module MB::Geometry
         # they will be in AnimationGroups, but returning will still prevent
         # attempts to modify deleted cells.  TODO: Add a way for
         # AnimationGroups to be rebuilt when a Voronoi graph is changed.
-        @base.remove(self) and return if @cell.voronoi.nil?
+        @base.remove(self) and return if @cell && @cell.voronoi.nil?
 
         return if @weight == 0.0
 
-        # FIXME: allow subclasses to override the way weight is applied
-        x, y = @cell.point
-        new_x, new_y = new_point
-
-        if @weight == 1.0
-          @cell.move(new_x, new_y)
+        if @cell
+          cells = [@cell]
         else
-          dx = new_x - x
-          dy = new_y - y
+          cells = @base.voronoi.cells
+        end
 
-          # This creates a discontinuity in the derivative at 0 and 1, but
-          # whatevs, weights outside 0..1 are going to be weird anyway
-          if @weight > 0 && @weight < 1
-            w = MB::M.smoothstep(@weight)
+        cells.each do |cell|
+          x, y = cell.point
+          new_x, new_y = new_point(cell)
+
+          # FIXME: allow subclasses to override the way weight is applied
+          if @weight == 1.0
+            cell.move(new_x, new_y)
           else
-            w = @weight
-          end
+            dx = new_x - x
+            dy = new_y - y
 
-          @cell.move(
-            MB::M.clamp(x + w * dx, @xmin, @xmax),
-            MB::M.clamp(y + w * dy, @ymin, @ymax)
-          )
+            # This creates a discontinuity in the derivative at 0 and 1, but
+            # whatevs, weights outside 0..1 are going to be weird anyway
+            if @weight > 0 && @weight < 1
+              w = MB::M.smoothstep(@weight)
+            else
+              w = @weight
+            end
+
+            @cell.move(
+              MB::M.clamp(x + w * dx, @xmin, @xmax),
+              MB::M.clamp(y + w * dy, @ymin, @ymax)
+            )
+          end
         end
       end
 
-      def new_point
+      def new_point(cell)
         raise NotImplementedError, 'Subclasses must implement #new_point and return new X and Y coordinates'
       end
     end
@@ -293,8 +301,8 @@ module MB::Geometry
         @dy = dy || v[1]
       end
 
-      def new_point
-        x, y = @cell.point
+      def new_point(cell)
+        x, y = cell.point
 
         x += @dx
         if x >= @xmax
@@ -330,8 +338,8 @@ module MB::Geometry
         @matrix = matrix || -1.degree.rotation
       end
 
-      def new_point
-        x, y = @cell.point
+      def new_point(cell)
+        x, y = cell.point
 
         x, y = *(@matrix * Vector[x, y])
 
