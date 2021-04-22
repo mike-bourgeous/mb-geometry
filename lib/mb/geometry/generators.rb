@@ -132,6 +132,7 @@ module MB
         #   ],
         #   anneal: 0,     # optional, number of times to move points to polygon centers
         #   bounding_box:, # optional, area bounding box to use during annealing
+        #   shuffle: false, # optional, shuffles points if true (changes generated colors)
         # }
         #
         # {
@@ -192,11 +193,13 @@ module MB
 
             rotate = spec[:rotate] || 0
             raise "Rotate must be a Numeric of degrees for :polygon, if given" unless rotate.is_a?(Numeric)
+            spec.delete(:rotate)
 
             translate = spec[:translate] || [0, 0]
             unless translate.is_a?(Array) && translate.length == 2 && translate.all?(Numeric)
               raise "Translate must be an Array of two numbers, if given"
             end
+            spec.delete(:translate)
 
             points = MB::Geometry::Generators.regular_polygon(sides, radius, rotation: rotate.degrees)
             points = points.reverse if spec[:clockwise]
@@ -223,8 +226,7 @@ module MB
             raise "Count must be an Integer for :random" unless count.is_a?(Integer)
 
             # Use an incrementing seed by default for deterministic generation
-            @@seed ||= 0
-            seed = spec[:seed] || (@@seed += 1)
+            seed = spec[:seed] || next_seed
             raise "Seed must be an Integer for :random" unless seed.is_a?(Integer)
 
             xmin = spec[:xmin] || -1.0
@@ -328,7 +330,30 @@ module MB
             end
           end
 
+          # TODO: rotation, then translation
+
+          if shuffle = spec[:shuffle]
+            raise "Shuffle must be true or false, if given" unless shuffle == true || shuffle == false
+
+            # Use an incrementing seed by default for deterministic generation
+            seed = spec[:seed] || next_seed
+            raise "Seed must be an Integer for :shuffle" unless seed.is_a?(Integer)
+
+            random = Random.new(seed)
+
+            prior_points = points.dup
+            5.times do
+              points.shuffle!(random: random)
+              break if points.length <= 1 || points != prior_points
+            end
+          end
+
           points
+        end
+
+        def next_seed
+          @@seed ||= 0
+          @@seed += 1
         end
       end
     end
