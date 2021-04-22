@@ -254,7 +254,7 @@ module MB
               extra = row.odd? ? odd_extra : 0
 
               for col in 0...(columns + extra)
-                x = MB::M.scale(col, 0..(columns - 1), xmin..xmax) + offset
+                x = MB::M.scale(col + offset, 0..(columns - 1), xmin..xmax)
                 y = MB::M.scale(row, 0..(rows - 1), ymax..ymin)
 
                 points << { x: x, y: y }
