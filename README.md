@@ -145,6 +145,9 @@ bin/voronoi_to_svg.rb /tmp/hashes.json /tmp/hashes.svg
 
 #### Generators
 
+See the source code and files under `test_data/` for details.  Generators
+include `:random`, `:segment`, `:polygon`, `:grid`, `:points`, and `:multi`.
+
 ##### Random points
 
 Colors and names may be specified in separate Arrays.  Colors will be reused in

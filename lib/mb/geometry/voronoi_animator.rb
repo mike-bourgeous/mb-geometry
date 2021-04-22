@@ -441,7 +441,12 @@ module MB::Geometry
     def shuffle(frames)
       points = @voronoi.cells.map(&:to_h)
       new_points = points.dup
-      new_points.shuffle! while points.length > 1 && new_points == points
+
+      5.times do
+        break if points.length <= 1 || new_points != points
+        new_points.shuffle!(random: @random)
+      end
+
       transition(new_points, frames)
     end
 
