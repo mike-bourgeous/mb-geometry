@@ -308,29 +308,48 @@ module MB::Geometry
 
       # Returns an Array of points (each a 2D numeric Array) representing the
       # enclosing Voronoi polygon of this Cell, scaled by +xscale+ and +yscale+
-      # around the Cell's input point.  This can be used to shrink the Voronoi
-      # polygons of a Voronoi diagram around the input points, creating gaps
-      # between them.
+      # around the Cell's input point.  The points are returned in
+      # counterclockwise order.
+      #
+      # This method can be used to shrink the Voronoi polygons of a Voronoi
+      # diagram around the input points, creating gaps between them.
       #
       # If one of the scale parameters is nil, it will be copied from the
       # other.
+      #
+      # If +:grow+ is a number, then it will be added to the length of each
+      # vector from the chosen center.  This allows shrinking or growing a cell
+      # by an absolute number of units rather than by a scaling facter.
       #
       # If +:centroid+ is true, then the scaling will be centered around the
       # polygon's center point, instead of the Cell's input point.
       #
       # See MB::Geometry.scale_matrix.
-      def scaled_polygon(xscale = 1, yscale = nil, centroid: false)
+      def scaled_polygon(xscale = 1, yscale = nil, grow: nil, centroid: false)
         @vertex_points ||= voronoi_vertices.map(&:point)
 
         xscale ||= yscale
         yscale ||= xscale
 
-        return @vertex_points if xscale == 1 && yscale == 1
+        return @vertex_points if xscale == 1 && yscale == 1 && grow.nil?
 
         xc, yc = *(centroid ? self.centroid : @point)
+        vc = Vector[xc, yc]
+
+        # TODO: Other growth/scaling experiments that might be interesting:
+        # - Calculating a multiplicative scale factor that will shrink a bounding box by +grow+ in each dimension
+        # - Finding edges and shrinking by +grow+ perpendicular to the edge, rather than acting on vertices
+
         m = MB::Geometry.scale_matrix(xscale: xscale, yscale: yscale, xcenter: xc, ycenter: yc)
         @vertex_points.map { |p|
-          (m * Vector[*p, 1])[0..1]
+          v = m * Vector[*p, 1]
+          if grow
+            v2 = Vector[v[0] - xc, v[1] - yc]
+            length = v2.magnitude + grow
+            length = 0 if length < 0
+            v = v2.normalize * length + vc
+          end
+          v[0..1]
         }
       end
 
