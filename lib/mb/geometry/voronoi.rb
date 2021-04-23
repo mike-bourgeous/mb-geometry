@@ -438,6 +438,11 @@ module MB::Geometry
     # Returns the height of the #area_bounding_box.
     attr_reader :height
 
+    # Returns the width and height of the user-defined bounding box
+    # (#user_bounding_box).  Returns the same value as #width or #height if no
+    # user bounding box is set.
+    attr_reader :user_width, :user_height
+
     # Returns the horizontal center of the #area_bounding_box.
     attr_reader :x_center
 
@@ -569,10 +574,12 @@ module MB::Geometry
       }
     end
 
-    # Sets an initial bounding box for cells.  The bounding box will expand to
-    # fit any cell sites outside the existing box, plus a small margin.  This
-    # bounding box is used to limit cell area for infinite cells.  Returns the
-    # final bounding box, which may have expanded to fit all points.
+    # Sets an initial bounding box for cells.  This is the bounding box that
+    # will be returned by #user_bounding_box.  The effective bounding box will
+    # expand to fit any cell sites outside the existing box, plus a small
+    # margin.  This bounding box is used to limit cell area for infinite cells.
+    # Returns the final bounding box, which may have expanded to fit all
+    # points.
     def set_area_bounding_box(xmin, ymin, xmax, ymax)
       @user_xmin = xmin
       @user_xmax = xmax
@@ -584,10 +591,16 @@ module MB::Geometry
       area_bounding_box
     end
 
-    # Returns the larger of an externally set bounding box or the bounding box
-    # that contains all input points as [xmin, ymin, xmax, ymax] with some
-    # margin.  This is used for the reflection process that eliminates infinite
-    # cells.
+    # Returns the user bounding box given to #set_area_bounding_box as [xmin,
+    # ymin, xmax, ymax].  If no such bounding box exists, returns [nil, nil,
+    # nil, nil].  See also #area_bounding_box and #computed_bounding_box.
+    def user_bounding_box
+      [@user_xmin, @user_ymin, @user_xmax, @user_ymax]
+    end
+
+    # Returns the larger of #user_bounding_box or the bounding box that contains
+    # all input points as [xmin, ymin, xmax, ymax] with some margin.  This is
+    # used for the reflection process that eliminates infinite cells.
     def area_bounding_box
       [@xmin, @ymin, @xmax, @ymax]
     end
@@ -824,7 +837,7 @@ module MB::Geometry
       # FIXME: out_of_bounds was false for cases where the bounding box grew,
       # but setting/re-setting the bounding box for every single point is slow.
       out_of_bounds = x <= @xmin || x >= @xmax || y <= @ymin || y >= @ymax
-      original_box = [@user_xmin, @user_ymin, @user_xmax, @user_ymax]
+      original_box = self.user_bounding_box
 
       prior_box = area_bounding_box
 

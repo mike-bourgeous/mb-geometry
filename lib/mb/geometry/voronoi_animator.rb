@@ -71,7 +71,7 @@ module MB::Geometry
         super(base: base, animators: [])
 
         @base = base
-        @new_point_scale = 1.5 * [@base.voronoi.width, @base.voronoi.height].max
+        @new_point_scale = 1.5 * [@base.voronoi.user_width, @base.voronoi.user_height].max
         @old_length = @base.voronoi.cells.length
         @current_frame = 0
 
