@@ -549,6 +549,13 @@ module MB::Geometry
       transition(@voronoi.cells.map(&:to_h).reverse, frames, **transition_options)
     end
 
+    # Sorts the points in the graph by the reversal of the bits in their
+    # indices.
+    def bitreverse(frames, **transition_options)
+      points = @voronoi.cells.sort_by { |c| ("%020b" % c.index).reverse }.map(&:to_h)
+      transition(points, frames, **transition_options)
+    end
+
     # Cycles the points +offset+ points to the right (so offset.abs points are
     # moved from the end to the beginning if positive, or vice versa if
     # negative).  See #transition.
