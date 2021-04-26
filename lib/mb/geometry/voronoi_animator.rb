@@ -25,7 +25,7 @@ module MB::Geometry
   class VoronoiAnimator
     DEFAULT_RANDOM_SEED = ENV['RANDOM_SEED']&.to_i || 0
 
-    # A group of cell animations, or a whole-graph animation, that can apply a
+    # A group of animations, or a whole-graph animation, that can apply a
     # global weight.
     class AnimationGroup
       extend Forwardable
@@ -67,11 +67,13 @@ module MB::Geometry
     class TransitionAnimation < AnimationGroup
       attr_accessor :weight
 
-      def initialize(base:, new_points:, frames:, weight: nil)
+      def initialize(base:, new_points:, frames:, weight: nil, remove_old_animators:)
         super(base: base, animators: [])
 
+        @remove_old_animators = remove_old_animators
+
         @base = base
-        @new_point_scale = 1.5 * [@base.voronoi.width, @base.voronoi.height].max
+        @new_point_scale = 1.5 * [@base.voronoi.user_width, @base.voronoi.user_height].max
         @old_length = @base.voronoi.cells.length
         @current_frame = 0
 
@@ -114,7 +116,7 @@ module MB::Geometry
           x, y = out_of_scene(h[:x], h[:y], idx)
 
           # If going from zero points to one or more, have points fade in from alpha=0
-          # (TODO: have all points optionally fade in from alpha=0?)
+          # (TODO: have all new points optionally fade in from alpha=0?)
           color = h[:color].dup
           color[3] = 0 if @old_length == 0
 
@@ -136,11 +138,14 @@ module MB::Geometry
           @new_points[idx] = h.merge(x: x, y: y, color: color)
         end
 
-        # FIXME: how can the old animators continue when points are being
-        # moved?  Would probably need to have them act on both old and new
-        # points
-        @old_animators = @base.cell_animators.dup
-        @old_groups = @base.animation_groups.dup
+        if @remove_old_animators
+          # FIXME: how can the old animators continue more smoothly when points
+          # are being transitioned?  Would probably need to have them act on both
+          # old and new points
+          @old_animators = @base.cell_animators.dup
+          @old_groups = @base.animation_groups.dup
+          @old_weights = (@old_animators.map { |a| [a, a.weight] } + @old_groups.map { |g| [g, g.weight] }).to_h
+        end
       end
 
       def update
@@ -155,12 +160,10 @@ module MB::Geometry
           end
         end
 
-        @old_animators.each do |a|
-          a.weight = 1.0 - @weight
-        end
-
-        @old_groups.each do |g|
-          g.weight = 1.0 - @weight
+        if @remove_old_animators
+          @old_weights.each do |a, w|
+            a.weight = w * (1.0 - @weight)
+          end
         end
 
         # Move matched points toward new points, and move extra old points out of the scene
@@ -193,12 +196,13 @@ module MB::Geometry
             @base.voronoi.cells[@new_length].remove
           end
 
-          # TODO: Should I really just keep the animators?  Would need a way to regenerate their Cell associations
-          @old_groups.each do |g|
-            @base.remove(g)
-          end
-          @old_animators.each do |g|
-            @base.remove(a)
+          if @remove_old_animators
+            @old_groups.each do |g|
+              @base.remove(g)
+            end
+            @old_animators.each do |a|
+              @base.remove(a)
+            end
           end
 
           @base.remove(self)
@@ -227,94 +231,193 @@ module MB::Geometry
       # A value, typically from 0.0 to 1.0, that scales the influence of an
       # animator.  0.0 means effectively disabled, 1.0 means fully enabled, 2.0
       # means twice as much difference is applied, etc.
-      attr_accessor :weight
+      attr_reader :weight
+
+      # A target value for :weight, that the #update method will gradually
+      # adjust weight toward.  See #weight_frames.
+      attr_accessor :target_weight
+
+      # The number of frames it should take to transition weight from 0.0 to
+      # 1.0.
+      attr_accessor :weight_frames
 
       # The MB::Geometry::Voronoi::Cell associated with this animation.
       attr_reader :cell
 
-      def initialize(base:, cell:)
+      # +:base+ - The VoronoiAnimator that contains this CellAnimator.
+      # +:selector+ - A selector for Geometry::Voronoi#cells (see the
+      #               documentation for that function).
+      def initialize(base:, selector:)
         raise "Base must be a VoronoiAnimator" unless base.is_a?(VoronoiAnimator)
-        raise "Cell must be a MB::Geometry::Voronoi::Cell" unless cell.is_a?(MB::Geometry::Voronoi::Cell)
 
         @base = base
-        @cell = cell
+        @selector = selector
+        @voronoi = nil
+        @state = nil
+
         @weight = 1.0
-        @xmin, @ymin, @xmax, @ymax = @cell.voronoi.area_bounding_box
+        @weight_frames = 60
+        @target_weight = 1.0
+
+        check_graph
       end
 
-      # Moves the associated cell to the next point for this animation.
+      # Sets both weight and target weight immediately.
+      def weight=(w)
+        @weight = w
+        @target_weight = w
+      end
+
+      # Moves the associated cell to the next point for this animation, calling
+      # subclasses' #update_state method to calculate the next point.
       def update
-        # Don't try to update cells that have been removed from the Voronoi
-        # graph.  FIXME: this won't actually remove most CellAnimators because
-        # they will be in AnimationGroups, but returning will still prevent
-        # attempts to modify deleted cells.  TODO: Add a way for
-        # AnimationGroups to be rebuilt when a Voronoi graph is changed.
-        @base.remove(self) and return if @cell.voronoi.nil?
-
-        return if @weight == 0.0
-
-        # FIXME: allow subclasses to override the way weight is applied
-        x, y = @cell.point
-        new_x, new_y = new_point
-
-        if @weight == 1.0
-          @cell.move(new_x, new_y)
-        else
-          dx = new_x - x
-          dy = new_y - y
-
-          # This creates a discontinuity in the derivative at 0 and 1, but
-          # whatevs, weights outside 0..1 are going to be weird anyway
-          if @weight > 0 && @weight < 1
-            w = MB::M.smoothstep(@weight)
+        # Move actual weight toward target weight
+        if @weight != @target_weight
+          delta = @target_weight - @weight
+          weight_increment = 1.0 / @weight_frames
+          if delta < weight_increment && delta > -weight_increment
+            @weight = @target_weight
+          elsif delta < 0
+            @weight -= weight_increment
           else
-            w = @weight
+            @weight += weight_increment
+          end
+        end
+
+        return if @weight == 0.0 # TODO: will this break state updates for some animators?
+
+        check_graph
+
+        # TODO: See if it's possible (or necessary) to cache selected cells
+        # until the graph changes in a way that would change the selected
+        # cells.  Graph identity is not sufficient, because a graph can be
+        # modified.  The graph version is not sufficient, because the version
+        # changes every time a cell moves.  The length of the cells is not
+        # sufficient, because a cell's name can be changed, causing the
+        # selector result to change.  So the graph would need to track a
+        # coarser version for "structural" modifications, in addition to the
+        # "cosmetic" version it currently tracks.
+        @base.voronoi.cells(@selector).each do |cell|
+          x, y = cell.point
+
+          cell_state = @state[cell.index]
+
+          # Reset cell state if the cell's identity changes
+          unless cell_state && cell_state[:cell].equal?(cell)
+            cell_state = { cell: cell, index: cell.index }
           end
 
-          @cell.move(
-            MB::M.clamp(x + w * dx, @xmin, @xmax),
-            MB::M.clamp(y + w * dy, @ymin, @ymax)
-          )
+          cell_state[:x] = x
+          cell_state[:y] = y
+
+          cell_state = update_state(cell_state)
+
+          @state[cell.index] = cell_state
+
+          new_x = cell_state[:x]
+          new_y = cell_state[:y]
+
+          # FIXME: allow subclasses to override the way weight is applied?
+          if @weight == 1.0
+            cell.move(new_x, new_y)
+          else
+            dx = new_x - x
+            dy = new_y - y
+
+            # This creates a discontinuity in the derivative at 0 and 1, but
+            # whatevs, weights outside 0..1 are going to be weird anyway.
+            # Smootherstep would be better for extrapolation, but smoothstep
+            # looks better when scaling animation weights within 0..1.
+            if @weight > 0 && @weight < 1
+              w = MB::M.smoothstep(@weight)
+            else
+              w = @weight
+            end
+
+            cell.move(
+              MB::M.clamp(x + w * dx, @xmin, @xmax),
+              MB::M.clamp(y + w * dy, @ymin, @ymax)
+            )
+          end
         end
       end
 
-      def new_point
-        raise NotImplementedError, 'Subclasses must implement #new_point and return new X and Y coordinates'
+      # Subclasses must override and return a Hash with the next state for a
+      # cell, given the prior state.  The prior state may be modified and
+      # returned, or a new Hash may be created.  The prior state will contain
+      # at least :x, :y, and :index keys, and the subclass may add its own data
+      # to associate with a cell.
+      def update_state(cell_state)
+        raise NotImplementedError, 'Subclasses must implement #update_state and return modified state Hash'
+      end
+
+      private
+
+      def check_graph
+        # FIXME: an animator's graph never changes, only the points change
+        unless @voronoi.equal?(@base.voronoi)
+          @voronoi = @base.voronoi
+
+          # TODO: update bounding box whenever it changes, even if the graph didn't?
+          @xmin, @ymin, @xmax, @ymax = @voronoi.user_bounding_box_fallback
+
+          if @state
+            @state.clear
+          else
+            @state = []
+          end
+        end
       end
     end
 
     # Bounces a cell off the walls of the Voronoi's area bounding box.
     class BounceAnimator < CellAnimator
-      def initialize(base:, cell:, dx: nil, dy: nil)
-        super(base: base, cell: cell)
+      def initialize(base:, selector:, velocity_proc: nil)
+        super(base: base, selector: selector)
 
-        v = Vector[cell.x, cell.y].normalize * 0.005
-        @dx = dx || v[0]
-        @dy = dy || v[1]
+        @velocity_proc = velocity_proc || ->(cell_state) {
+          # The rescue handles zero vectors which cannot be normalized
+          Vector[cell_state[:x], cell_state[:y]].normalize * 0.005 rescue Vector[0.005, 0]
+        }
       end
 
-      def new_point
-        x, y = @cell.point
+      def update_state(cell_state)
+        x = cell_state[:x]
+        y = cell_state[:y]
 
-        x += @dx
+        if cell_state[:dx]
+          dx = cell_state[:dx]
+          dy = cell_state[:dy]
+        else
+          v = @velocity_proc.call(cell_state)
+          dx = v[0]
+          dy = v[1]
+        end
+
+        x += dx
         if x >= @xmax
-          @dx = -@dx.abs
+          dx = -dx.abs
           x = 2.0 * @xmax - x
         elsif x <= @xmin
-          @dx = @dx.abs
+          dx = dx.abs
           x = 2.0 * @xmin - x
         end
 
-        y += @dy
+        y += dy
         if y >= @ymax
-          @dy = -@dy.abs
+          dy = -dy.abs
           y = 2.0 * @ymax - y
         elsif y <= @ymin
-          @dy = @dy.abs
+          dy = dy.abs
           y = 2.0 * @ymin - y
         end
 
-        return x, y
+        cell_state[:x] = x
+        cell_state[:y] = y
+        cell_state[:dx] = dx
+        cell_state[:dy] = dy
+
+        cell_state
       end
     end
 
@@ -322,25 +425,29 @@ module MB::Geometry
     # to the edges of the graph.  Useful for rotations.  Default matrix is a
     # rotation by one degree clockwise.
     class MatrixAnimator < CellAnimator
-      def initialize(base:, cell:, matrix: nil)
+      def initialize(base:, selector:, matrix: nil)
         raise 'Matrix must be a Ruby Matrix' unless matrix.nil? || matrix.is_a?(Matrix)
 
-        super(base: base, cell: cell)
+        super(base: base, selector: selector)
 
         @matrix = matrix || -1.degree.rotation
       end
 
-      def new_point
-        x, y = @cell.point
+      def update_state(cell_state)
+        x, y = cell_state[:x], cell_state[:y]
 
         x, y = *(@matrix * Vector[x, y])
 
         x = MB::M.clamp(x, @xmin, @xmax)
         y = MB::M.clamp(y, @ymin, @ymax)
 
-        return x, y
+        cell_state[:x] = x
+        cell_state[:y] = y
+
+        cell_state
       end
     end
+
 
     attr_reader :voronoi
     attr_reader :cell_animators
@@ -398,15 +505,8 @@ module MB::Geometry
 
     # Adds bouncing cell animators for all cells, or for a given subset of cells
     # or cell indices.
-    def bounce(selector = nil)
-      add(
-        AnimationGroup.new(
-          base: self,
-          animators: @voronoi.cells(selector).map { |c|
-            BounceAnimator.new(base: self, cell: c)
-          }
-        )
-      )
+    def bounce(selector = nil, velocity_proc: nil)
+      add(BounceAnimator.new(base: self, selector: selector, velocity_proc: velocity_proc))
     end
 
     # Adds a rotation matrix cell animator for all (or given) cells, rotating by
@@ -414,31 +514,24 @@ module MB::Geometry
     def spin(selector = nil, rotation: nil)
       matrix = rotation&.rotation
 
-      add(
-        AnimationGroup.new(
-          base: self,
-          animators: @voronoi.cells(selector).map { |c|
-            MatrixAnimator.new(base: self, cell: c, matrix: matrix)
-          }
-        )
-      )
+      add(MatrixAnimator.new(base: self, selector: selector, matrix: matrix))
     end
 
     # Animates a transition from the current graph to the given new set of
     # points, over the given number of frames.
-    def transition(points, frames)
+    def transition(points, frames, remove_old_animators: false)
       # Cancel any existing transitions
       @animation_groups.grep(TransitionAnimation).each { |a|
         remove(a)
       }
 
-      add(TransitionAnimation.new(base: self, new_points: points, frames: frames))
+      add(TransitionAnimation.new(base: self, new_points: points, frames: frames, remove_old_animators: remove_old_animators))
     end
 
     # Deterministically shuffles the current points in the graph over the given
     # number of +frames+, so each point is randomly animated to another point
     # until the original graph reappears.  See #transition.
-    def shuffle(frames)
+    def shuffle(frames, **transition_options)
       points = @voronoi.cells.map(&:to_h)
       new_points = points.dup
 
@@ -447,45 +540,52 @@ module MB::Geometry
         new_points.shuffle!(random: @random)
       end
 
-      transition(new_points, frames)
+      transition(new_points, frames, **transition_options)
     end
 
     # Reverses the order of points in the graph over the given number of
     # +frames+.  See #transition.
-    def reverse(frames)
-      transition(@voronoi.cells.map(&:to_h).reverse, frames)
+    def reverse(frames, **transition_options)
+      transition(@voronoi.cells.map(&:to_h).reverse, frames, **transition_options)
+    end
+
+    # Sorts the points in the graph by the reversal of the bits in their
+    # indices.
+    def bitreverse(frames, **transition_options)
+      points = @voronoi.cells.sort_by { |c| ("%020b" % c.index).reverse }.map(&:to_h)
+      transition(points, frames, **transition_options)
     end
 
     # Cycles the points +offset+ points to the right (so offset.abs points are
     # moved from the end to the beginning if positive, or vice versa if
     # negative).  See #transition.
-    def cycle(offset, frames)
+    def cycle(offset, frames, **transition_options)
       points = @voronoi.cells.map(&:to_h)
-      transition(points.rotate(-offset), frames)
+      transition(points.rotate(-offset), frames, **transition_options)
     end
 
     # Transitions to a version of the current graph that has been annealed zero
     # or more +times+, across +frames+ frames.  See MB::Geometry::Voronoi#anneal.
-    def anneal(times, frames)
+    def anneal(times, frames, **transition_options)
       old_points = @voronoi.cells.map(&:to_h)
       new_points = MB::Geometry::Generators.generate(
         points: old_points,
         anneal: times,
         bounding_box: @voronoi.area_bounding_box
       )
-      transition(new_points, frames)
+      transition(new_points, frames, **transition_options)
     end
 
     # Transitions to a scaled version of the current graph, by factors +x+ and
     # +y+ (1.0 for no change), over +frames+ frames.
-    def scale(x, y, frames)
+    def scale(x, y, frames, **transition_options)
       points = @voronoi.cells.map { |p|
         h = p.to_h
         h[:x] *= x
         h[:y] *= y
         h
       }
-      transition(points, frames)
+      transition(points, frames, **transition_options)
     end
 
     # Causes all animations to advance by one frame.  Returns true if there
@@ -503,7 +603,7 @@ module MB::Geometry
         g.update
       end
 
-      return started_with_animators || cell_animators.any? || @animation_groups.any?
+      return started_with_animators || @cell_animators.any? || @animation_groups.any?
     end
   end
 end
