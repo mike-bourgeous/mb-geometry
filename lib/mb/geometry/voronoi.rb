@@ -598,6 +598,18 @@ module MB::Geometry
       [@user_xmin, @user_ymin, @user_xmax, @user_ymax]
     end
 
+    # Returns the user bounding box if it exists, or the computed area bounding
+    # box if it does not, regardless of the actual range occupied by points on
+    # the graph.
+    def user_bounding_box_fallback
+      [
+        @user_xmin || @xmin,
+        @user_ymin || @ymin,
+        @user_xmax || @xmax,
+        @user_ymax || @ymax
+      ]
+    end
+
     # Returns the larger of #user_bounding_box or the bounding box that contains
     # all input points as [xmin, ymin, xmax, ymax] with some margin.  This is
     # used for the reflection process that eliminates infinite cells.
