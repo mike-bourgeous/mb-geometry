@@ -1,0 +1,16 @@
+generator: :multi
+generators:
+  - generator: :polygon
+    sides: 4
+    radius: 0.75
+    rotate:
+      rotate: 45
+      center: [0.75, 0]
+    translate: [-2.25, 0.5]
+  - generator: :polygon
+    sides: 4
+    radius: 0.75
+    aspect: 0.75
+    scale: [1.25, 1.5]
+    rotate: 30
+    translate: [2.0, -0.25]

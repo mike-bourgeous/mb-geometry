@@ -139,6 +139,29 @@ RSpec.describe MB::Geometry do
     end
   end
 
+  describe '.rotation_matrix' do
+    it 'returns an ordinary rotation matrix when centered at the origin' do
+      m = MB::Geometry.rotation_matrix(radians: 30.degrees).round(8)
+      expect(Matrix[m.row(0)[0..1], m.row(1)[0..1]]).to eq(30.degree.rotation.round(8))
+    end
+
+    it 'can return a matrix that rotates a point around the origin' do
+      m = MB::Geometry.rotation_matrix(radians: 90.degrees)
+      expect(m * Vector[1, 1, 1]).to eq(Vector[-1, 1, 1])
+      expect(m * Vector[0, -1, 1]).to eq(Vector[1, 0, 1])
+
+      m2 = MB::Geometry.rotation_matrix(radians: -45.degrees)
+      expect((m2 * Vector[0.5 ** 0.5, 0.5 ** 0.5, 1]).round(8)).to eq(Vector[1, 0, 1])
+    end
+
+    it 'can rotate around a point away from the origin' do
+      m = MB::Geometry.rotation_matrix(radians: 90.degrees, xcenter: 2, ycenter: 3)
+      expect(m * Vector[2, 3, 1]).to eq(Vector[2, 3, 1])
+      expect(m * Vector[3, 3, 1]).to eq(Vector[2, 4, 1])
+      expect(m * Vector[2, 2, 1]).to eq(Vector[3, 3, 1])
+    end
+  end
+
   describe '.scale_matrix' do
     it 'returns a matrix matching the expected composed matrix' do
       for xscale in (-2..2).step(0.5)

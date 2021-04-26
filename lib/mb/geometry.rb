@@ -10,7 +10,7 @@ module MB
   module Geometry
     # Geometry DSL methods to add to Numeric.
     module NumericAddons
-      # Returns a rotation matrix of the current numeric in radians.
+      # Returns a non-augmented rotation matrix of the current numeric in radians.
       #
       # Example:
       # 1.degree.rotation
@@ -271,6 +271,27 @@ module MB
         }
 
         sum.map { |v| v.to_f / points.size }
+      end
+
+      # Returns a Matrix that will rotate augmented 2D vectors by +:radians+
+      # around the point (+:xcenter+, +:ycenter+).
+      def rotation_matrix(radians:, xcenter: 0, ycenter: 0)
+        pre_translate = Matrix[
+          [1, 0, -xcenter],
+          [0, 1, -ycenter],
+          [0, 0, 1]
+        ]
+
+        r = radians.rotation
+        rotation = Matrix[[*r.row(0), 0], [*r.row(1), 0], [0, 0, 1]]
+
+        post_translate = Matrix[
+          [1, 0, xcenter],
+          [0, 1, ycenter],
+          [0, 0, 1]
+        ]
+
+        post_translate * rotation * pre_translate
       end
 
       # Returns a Matrix that will scale 2D vectors by +:xscale+/+:yscale+

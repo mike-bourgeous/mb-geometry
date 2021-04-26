@@ -175,6 +175,17 @@ module MB
         #     { points: ... },
         #   ],
         # }
+        #
+        # {
+        #   ...
+        #   # Modifiers that apply to all generators
+        #   scale: [1.5, 1.25] # can also just be a number
+        #   rotate: {
+        #     rotate: 45, # degrees
+        #     center: [1, -1] # around
+        #   },
+        #   translate: [-2, 2]
+        # }
         def generate(spec)
           raise "Spec must be a Hash" unless spec.is_a?(Hash)
 
@@ -189,22 +200,10 @@ module MB
             aspect = spec[:aspect] || 1.0
             raise "Aspect must be a Numeric for :polygon, if given" unless aspect.is_a?(Numeric)
 
-            # TODO: Maybe make scaling, rotation, and translation post-generation transforms, like :anneal?
-
-            rotate = spec[:rotate] || 0
-            raise "Rotate must be a Numeric of degrees for :polygon, if given" unless rotate.is_a?(Numeric)
-            spec.delete(:rotate)
-
-            translate = spec[:translate] || [0, 0]
-            unless translate.is_a?(Array) && translate.length == 2 && translate.all?(Numeric)
-              raise "Translate must be an Array of two numbers, if given"
-            end
-            spec.delete(:translate)
-
-            points = MB::Geometry::Generators.regular_polygon(sides, radius, rotation: rotate.degrees)
+            points = MB::Geometry::Generators.regular_polygon(sides, radius)
             points = points.reverse if spec[:clockwise]
             points = points.map { |p|
-              { x: p[0] * aspect + translate[0], y: p[1] + translate[1] }
+              { x: p[0] * aspect, y: p[1] }
             }
 
           when :segment
@@ -370,7 +369,67 @@ module MB
             end
           end
 
-          # TODO: scaling, then rotation, then translation
+          if scale = spec[:scale]
+            case scale
+            when Numeric
+              xscale = scale
+              yscale = scale
+
+            when Array
+              raise "Scale must be numeric or a two-element numeric Array, if given" unless scale.length == 2 && scale.all?(Numeric)
+              xscale, yscale = scale
+
+            else
+              raise "Scale must be numeric or a two-element numeric Array, if given"
+            end
+
+            points.each do |p|
+              p[:x] *= xscale
+              p[:y] *= yscale
+            end
+          end
+
+          if rotate = spec[:rotate]
+            case rotate
+            when Numeric
+              rotation = rotate
+              xcenter = 0
+              ycenter = 0
+
+            when Hash
+              rotation = rotate[:rotate] || 0
+              xcenter, ycenter = rotate[:center]
+              xcenter ||= 0
+              ycenter ||= 0
+
+            else
+              raise "Rotate must be a number of degrees, or a Hash with :rotate (degrees) and :center (x, y)"
+            end
+
+            matrix = MB::Geometry.rotation_matrix(radians: rotation, xcenter: xcenter, ycenter: ycenter)
+
+            points.each do |p|
+              v = Vector[p[:x], p[:y], 1]
+              v = matrix * v
+              p[:x] = v[0]
+              p[:y] = v[1]
+            end
+          end
+
+          if translate = spec[:translate]
+            unless translate.is_a?(Array) && translate.length == 2 && translate.all?(Numeric)
+              raise "Translate must be a two-element numeric Array, if given"
+            end
+
+            x, y = translate
+
+            points.each do |p|
+              p[:x] += x
+              p[:y] += y
+            end
+          end
+
+          # TODO: apply scaling/rotation/translation in the order given in the file?
 
           if shuffle = spec[:shuffle]
             raise "Shuffle must be true or false, if given" unless shuffle == true || shuffle == false
