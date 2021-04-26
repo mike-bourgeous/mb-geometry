@@ -231,7 +231,15 @@ module MB::Geometry
       # A value, typically from 0.0 to 1.0, that scales the influence of an
       # animator.  0.0 means effectively disabled, 1.0 means fully enabled, 2.0
       # means twice as much difference is applied, etc.
-      attr_accessor :weight
+      attr_reader :weight
+
+      # A target value for :weight, that the #update method will gradually
+      # adjust weight toward.  See #weight_frames.
+      attr_accessor :target_weight
+
+      # The number of frames it should take to transition weight from 0.0 to
+      # 1.0.
+      attr_accessor :weight_frames
 
       # The MB::Geometry::Voronoi::Cell associated with this animation.
       attr_reader :cell
@@ -244,15 +252,38 @@ module MB::Geometry
 
         @base = base
         @selector = selector
-        @weight = 1.0
         @voronoi = nil
         @state = nil
+
+        @weight = 1.0
+        @weight_frames = 60
+        @target_weight = 1.0
 
         check_graph
       end
 
-      # Moves the associated cell to the next point for this animation.
+      # Sets both weight and target weight immediately.
+      def weight=(w)
+        @weight = w
+        @target_weight = w
+      end
+
+      # Moves the associated cell to the next point for this animation, calling
+      # subclasses' #update_state method to calculate the next point.
       def update
+        # Move actual weight toward target weight
+        if @weight != @target_weight
+          delta = @target_weight - @weight
+          weight_increment = 1.0 / @weight_frames
+          if delta < weight_increment && delta > -weight_increment
+            @weight = @target_weight
+          elsif delta < 0
+            @weight -= weight_increment
+          else
+            @weight += weight_increment
+          end
+        end
+
         return if @weight == 0.0 # TODO: will this break state updates for some animators?
 
         check_graph
