@@ -67,8 +67,10 @@ module MB::Geometry
     class TransitionAnimation < AnimationGroup
       attr_accessor :weight
 
-      def initialize(base:, new_points:, frames:, weight: nil)
+      def initialize(base:, new_points:, frames:, weight: nil, remove_old_animators:)
         super(base: base, animators: [])
+
+        @remove_old_animators = remove_old_animators
 
         @base = base
         @new_point_scale = 1.5 * [@base.voronoi.user_width, @base.voronoi.user_height].max
@@ -114,7 +116,7 @@ module MB::Geometry
           x, y = out_of_scene(h[:x], h[:y], idx)
 
           # If going from zero points to one or more, have points fade in from alpha=0
-          # (TODO: have all points optionally fade in from alpha=0?)
+          # (TODO: have all new points optionally fade in from alpha=0?)
           color = h[:color].dup
           color[3] = 0 if @old_length == 0
 
@@ -136,11 +138,14 @@ module MB::Geometry
           @new_points[idx] = h.merge(x: x, y: y, color: color)
         end
 
-        # FIXME: how can the old animators continue when points are being
-        # moved?  Would probably need to have them act on both old and new
-        # points
-        @old_animators = @base.cell_animators.dup
-        @old_groups = @base.animation_groups.dup
+        if @remove_old_animators
+          # FIXME: how can the old animators continue more smoothly when points
+          # are being transitioned?  Would probably need to have them act on both
+          # old and new points
+          @old_animators = @base.cell_animators.dup
+          @old_groups = @base.animation_groups.dup
+          @old_weights = (@old_animators.map { |a| [a, a.weight] } + @old_groups.map { |g| [g, g.weight] }).to_h
+        end
       end
 
       def update
@@ -155,12 +160,10 @@ module MB::Geometry
           end
         end
 
-        @old_animators.each do |a|
-          a.weight = 1.0 - @weight
-        end
-
-        @old_groups.each do |g|
-          g.weight = 1.0 - @weight
+        if @remove_old_animators
+          @old_weights.each do |a, w|
+            a.weight = w * (1.0 - @weight)
+          end
         end
 
         # Move matched points toward new points, and move extra old points out of the scene
@@ -193,12 +196,13 @@ module MB::Geometry
             @base.voronoi.cells[@new_length].remove
           end
 
-          # FIXME: Keep old animators unless told to remove them
-          @old_groups.each do |g|
-            @base.remove(g)
-          end
-          @old_animators.each do |g|
-            @base.remove(a)
+          if @remove_old_animators
+            @old_groups.each do |g|
+              @base.remove(g)
+            end
+            @old_animators.each do |a|
+              @base.remove(a)
+            end
           end
 
           @base.remove(self)
@@ -470,8 +474,8 @@ module MB::Geometry
 
     # Adds bouncing cell animators for all cells, or for a given subset of cells
     # or cell indices.
-    def bounce(selector = nil)
-      add(BounceAnimator.new(base: self, selector: selector))
+    def bounce(selector = nil, velocity_proc: nil)
+      add(BounceAnimator.new(base: self, selector: selector, velocity_proc: velocity_proc))
     end
 
     # Adds a rotation matrix cell animator for all (or given) cells, rotating by
@@ -484,19 +488,19 @@ module MB::Geometry
 
     # Animates a transition from the current graph to the given new set of
     # points, over the given number of frames.
-    def transition(points, frames)
+    def transition(points, frames, remove_old_animators: false)
       # Cancel any existing transitions
       @animation_groups.grep(TransitionAnimation).each { |a|
         remove(a)
       }
 
-      add(TransitionAnimation.new(base: self, new_points: points, frames: frames))
+      add(TransitionAnimation.new(base: self, new_points: points, frames: frames, remove_old_animators: remove_old_animators))
     end
 
     # Deterministically shuffles the current points in the graph over the given
     # number of +frames+, so each point is randomly animated to another point
     # until the original graph reappears.  See #transition.
-    def shuffle(frames)
+    def shuffle(frames, **transition_options)
       points = @voronoi.cells.map(&:to_h)
       new_points = points.dup
 
@@ -505,45 +509,45 @@ module MB::Geometry
         new_points.shuffle!(random: @random)
       end
 
-      transition(new_points, frames)
+      transition(new_points, frames, **transition_options)
     end
 
     # Reverses the order of points in the graph over the given number of
     # +frames+.  See #transition.
-    def reverse(frames)
-      transition(@voronoi.cells.map(&:to_h).reverse, frames)
+    def reverse(frames, **transition_options)
+      transition(@voronoi.cells.map(&:to_h).reverse, frames, **transition_options)
     end
 
     # Cycles the points +offset+ points to the right (so offset.abs points are
     # moved from the end to the beginning if positive, or vice versa if
     # negative).  See #transition.
-    def cycle(offset, frames)
+    def cycle(offset, frames, **transition_options)
       points = @voronoi.cells.map(&:to_h)
-      transition(points.rotate(-offset), frames)
+      transition(points.rotate(-offset), frames, **transition_options)
     end
 
     # Transitions to a version of the current graph that has been annealed zero
     # or more +times+, across +frames+ frames.  See MB::Geometry::Voronoi#anneal.
-    def anneal(times, frames)
+    def anneal(times, frames, **transition_options)
       old_points = @voronoi.cells.map(&:to_h)
       new_points = MB::Geometry::Generators.generate(
         points: old_points,
         anneal: times,
         bounding_box: @voronoi.area_bounding_box
       )
-      transition(new_points, frames)
+      transition(new_points, frames, **transition_options)
     end
 
     # Transitions to a scaled version of the current graph, by factors +x+ and
     # +y+ (1.0 for no change), over +frames+ frames.
-    def scale(x, y, frames)
+    def scale(x, y, frames, **transition_options)
       points = @voronoi.cells.map { |p|
         h = p.to_h
         h[:x] *= x
         h[:y] *= y
         h
       }
-      transition(points, frames)
+      transition(points, frames, **transition_options)
     end
 
     # Causes all animations to advance by one frame.  Returns true if there
