@@ -740,6 +740,7 @@ module MB::Geometry
       @cells.clear
       @pointset.clear
       @raw_points.clear
+      @vorpoints.clear
 
       reset(dispose: true)
 
