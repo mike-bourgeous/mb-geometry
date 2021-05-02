@@ -1048,7 +1048,7 @@ module MB::Geometry
           }.uniq.map { |indices|
             DelaunayTriangle.new(self, indices)
           }.reject { |t|
-            puts "Warning: ignoring degenerate triangle #{t}" if t.area == 0
+            puts "Warning: ignoring degenerate triangle #{t}" if t.area.round(14) == 0
             t.area == 0
           }.to_a
         elsif @engine == :delaunay || @engine == :delaunay_debug
@@ -1057,7 +1057,7 @@ module MB::Geometry
           }.map { |t|
             DelaunayTriangle.new(self, t.map(&:idx))
           }.reject { |t|
-            puts "Warning: ignoring degenerate triangle #{t}" if t.area == 0
+            puts "Warning: ignoring degenerate triangle #{t}" if t.area.round(14) == 0
             t.area == 0
           }.to_a
         else
