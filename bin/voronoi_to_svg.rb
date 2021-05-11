@@ -50,6 +50,7 @@ v.save_svg(
   max_height: yres,
   polyscale: polyscale,
   polygrow: ENV['POLYGROW']&.to_f,
+  centroid: ENV['CENTROID'] == '1',
   labels: ENV['LABELS'] == '1'
 )
 v.save_rubyvor_svg(ARGV[1] + '-rv.svg') if v.engine == :rubyvor
