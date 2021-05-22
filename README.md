@@ -236,7 +236,8 @@ setting the `DELAUNAY_ENGINE` and `DELAUNAY_DEBUG` environment variables.
   `lib/mb/geometry/delaunay.rb` for more info.  This is reasonably fast.
 - `DELAUNAY_ENGINE=delaunay_debug DELAUNAY_DEBUG=1` -- The same pure Ruby
   implementation, but with lots of debugging output and each step of the
-  algorithm dumped to a .json file in /tmp.  This is slow.
+  algorithm dumped to a .json file in /tmp (or the directory specified by
+  the `JSON_DIR` environment variable, if set).  This is slow.
 
 #### Pure Ruby algorithm
 

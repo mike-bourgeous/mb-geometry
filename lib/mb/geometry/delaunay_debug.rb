@@ -45,10 +45,14 @@ module MB::Geometry
       def_delegators :@points, :count, :length, :size
 
       # +points+ *must* already be sorted by [x,y].
-      def initialize(points)
+      def initialize(points, hull_id: nil)
         @@hull_id ||= 0
-        @hull_id = @@hull_id
-        @@hull_id += 1
+        if hull_id
+          @hull_id = hull_id
+        else
+          @hull_id = @@hull_id
+          @@hull_id += 1
+        end
 
         @points = points.dup
         @leftmost = points.first
@@ -58,6 +62,8 @@ module MB::Geometry
       end
 
       def add_hull(h)
+        DelaunayDebug.loglog "Adding right-side hull ID#{h.hull_id} with #{h.points.length} points to left-side hull ID#{@hull_id} with #{@points.length} points"
+
         @rightmost = h.rightmost
         @points.concat(h.points)
 
@@ -70,7 +76,7 @@ module MB::Geometry
       # +right+ convex hull.
       #
       # Called HULL in Lee and Schachter (extended to return both tangents).
-      def tangents(right)
+      def tangents(right, delaunay_base = nil)
         if self.rightmost > right.leftmost
           raise "Rightmost point on left-side hull #{self} is to the right of leftmost point on right-side hull #{right}"
         end
@@ -80,6 +86,8 @@ module MB::Geometry
         left = self
 
         max_count = left.count + right.count
+
+        DelaunayDebug.loglog "Looking for lower tangent between left hull #{@hull_id} and right hull #{right.hull_id}"
 
         # Walk clockwise around left, counterclockwise around right, until the
         # next point on both sides is left of X->Y, showing that X->Y is the
@@ -91,6 +99,15 @@ module MB::Geometry
         z2 = z1 && x.clockwise(z1)
         lower = nil
         max_count.times do
+          if delaunay_base
+            delaunay_base.tangents = [
+              [[x.x, x.y], [y.x, y.y]],
+              nil
+            ]
+          end
+
+          DelaunayDebug.save_json
+
           if z && z.right_of?(x, y)
             old_z = z
             z = z.counterclockwise(y)
@@ -107,6 +124,8 @@ module MB::Geometry
 
         raise "BUG: No lower tangent could be found" if lower.nil?
 
+        DelaunayDebug.loglog "Looking for upper tangent between left hull #{@hull_id} and right hull #{right.hull_id}"
+
         # Walk counterclockwise around left, clockwise around right, until the
         # next point on both sides is to the right of X->Y, showing that X->Y is
         # the highest segment.
@@ -117,6 +136,13 @@ module MB::Geometry
         z_l = x.first
         upper = nil
         max_count.times do
+          if delaunay_base
+            delaunay_base.tangents = [
+              [[lower[0].x, lower[0].y], [lower[1].x, lower[1].y]],
+              [[x.x, x.y], [y.x, y.y]],
+            ]
+          end
+
           if z_r && z_r.left_of?(x, y)
             old_z = z_r
             z_r = z_r.clockwise(y)
@@ -155,15 +181,15 @@ module MB::Geometry
       end
 
       def name
-        @name
+        "#{@hull&.hull_id}/#{@idx}#{@namesuffix}"
       end
 
       # Sets a name for this point (+n+ will be prefixed by the point's index).
       def name=(n)
         if n.nil?
-          @name = "#{@hull&.hull_id}/#{@idx}"
+          @namesuffix = ''
         else
-          @name = "#{@hull&.hull_id}/#{@idx}: #{n}"
+          @namesuffix = ": #{n}"
         end
       end
 
@@ -308,6 +334,7 @@ module MB::Geometry
 
 
     attr_reader :points, :sorted_points
+    attr_accessor :tangents
 
     # Initializes a triangulation of the given Array of +points+ of the
     # following form: [ [x1, y1], [x2, y2], ... ].
@@ -325,6 +352,8 @@ module MB::Geometry
       @outside_test = nil
       @tangents = nil
       triangulate(@sorted_points)
+
+      DelaunayDebug.loglog "Triangulated all #{points.length} points"
     end
 
     # TODO: methods for adding and removing individual points, using a fast
@@ -335,7 +364,11 @@ module MB::Geometry
         if p.hull.nil?
           c = nil
         else
-          id = (p.hull.hash ^ p.hull.hull_id) % 64 # XXX p.hull.hull_id % 64
+          if p.hull.hull_id.is_a?(String)
+            id = (p.hull.hull_id.length ^ p.hull.hull_id.hash) % 64
+          else
+            id = (p.hull.hash ^ p.hull.hull_id) % 64 # XXX p.hull.hull_id % 64
+          end
 
           r = (id % 4) / 6.0 + 0.25
           g = ((id / 4) % 4) / 6.0 + 0.25
@@ -366,7 +399,8 @@ module MB::Geometry
       this_json = h.merge(to_h)
       if @last_json != this_json
         DelaunayDebug.loglog { " \e[34m --->>> Writing JSON #{@json_idx} <<<---\e[0m" }
-        File.write("/tmp/delaunay_#{'%05d' % @json_idx}.json", JSON.pretty_generate(this_json))
+        dir = ENV['JSON_DIR'] || '/tmp'
+        File.write(File.join(dir, "delaunay_#{'%05d' % @json_idx}.json"), JSON.pretty_generate(this_json))
         @json_idx += 1
         @last_json = this_json
       end
@@ -419,25 +453,32 @@ module MB::Geometry
       DelaunayDebug.save_json
     end
 
-    # Pass a sorted list of points.
+    # Pass a sorted list of points (called by the constructor).
     def triangulate(points)
+      thull = Hull.new(points, hull_id: 'T') # temporary hull just for highlighting in debug output
+
       DelaunayDebug.loglog { "\e[34mTriangulating \e[1m#{points.length}\e[22m points\e[0m" }
 
       DelaunayDebug.save_json
 
       case points.length
       when 0
+        DelaunayDebug.loglog 'No points to triangulate; returning an empty hull'
         Hull.new([])
 
       when 1
+        DelaunayDebug.loglog 'A single point was given; returning that point in a hull'
         Hull.new(points)
 
       when 2
+        DelaunayDebug.loglog 'Two points were given; connecting them and adding them to a new hull'
         points[0].add(points[1])
         points[1].add(points[0])
         Hull.new(points)
 
       when 3
+        DelaunayDebug.loglog 'Three points were given; creating a counterclockwise hull'
+
         h = Hull.new(points)
 
         # Because points are known to be sorted, p1 is leftmost and p3 is rightmost
@@ -446,7 +487,7 @@ module MB::Geometry
         # Connect points to each other in counterclockwise order
         cross = p2.cross(p1, p3)
         if cross < 0
-          DelaunayDebug.loglog { " cross: #{cross}; linking p1 #{p1} -> p2 #{p2} -> p3 #{p3}" }
+          DelaunayDebug.loglog { " points form a triangle -- cross: #{cross}; linking p1 #{p1} -> p2 #{p2} -> p3 #{p3}" }
           # p2 is right of p1->p3; put p2 on the bottom
           p1.add(p2)
           p2.add(p3)
@@ -456,7 +497,7 @@ module MB::Geometry
           p2.add(p1)
           p1.add(p3)
         elsif cross > 0
-          DelaunayDebug.loglog { " cross: #{cross}; linking p1 #{p1} -> p3 #{p3} -> p2 #{p2}" }
+          DelaunayDebug.loglog { " points form a triangle -- cross: #{cross}; linking p1 #{p1} -> p3 #{p3} -> p2 #{p2}" }
           # p2 is left of p1->p3; put p2 on the top
           p1.add(p3)
           p3.add(p2)
@@ -467,7 +508,7 @@ module MB::Geometry
           p3.add(p1)
         else
           # p2 is on a line between p1 and p3; link left-to-right
-          DelaunayDebug.loglog { " cross: #{cross}; linking p1 #{p1} -> p2 #{p2} ; linking p2 -> p3 #{p3}" }
+          DelaunayDebug.loglog { " points are collinear -- cross: #{cross}; linking p1 #{p1} -> p2 #{p2} ; linking p2 -> p3 #{p3}" }
           p1.add(p2)
           p2.add(p3)
 
@@ -483,7 +524,14 @@ module MB::Geometry
         left = points[0...n]
         right = points[n..-1]
 
-        DelaunayDebug.loglog { "\e[36mSplitting into \e[1m#{left.length}\e[22m and \e[1m#{right.length}\e[22m points...\e[0m" }
+        # Temporary hulls for logging/labeling
+        lhull = Hull.new(left, hull_id: 'L')
+        rhull = Hull.new(right, hull_id: 'R')
+
+        DelaunayDebug.loglog { "\e[36mSplitting #{points.length} points into into \e[1m#{left.length}\e[22m and \e[1m#{right.length}\e[22m points...\e[0m" }
+
+        left.each do |p| p.hull = nil end
+        right.each do |p| p.hull = nil end
 
         merge(triangulate(left), triangulate(right))
       end
@@ -503,7 +551,7 @@ module MB::Geometry
     def merge(left, right)
       DelaunayDebug.loglog { "\e[35mMerging \e[1m#{left.length}\e[22m points on the left with \e[1m#{right.length}\e[22m points on the right\e[0m" }
 
-      (l_l, l_r), (u_l, u_r) = left.tangents(right)
+      (l_l, l_r), (u_l, u_r) = left.tangents(right, self)
 
       @tangents = [
         [[l_l.x, l_l.y], [l_r.x, l_r.y]],
