@@ -351,6 +351,7 @@ module MB::Geometry
       @sorted_points = @points.sort # Point implements <=> to sort by X and break ties by Y
       @outside_test = nil
       @tangents = nil
+      @midpoint = nil
       triangulate(@sorted_points)
 
       DelaunayDebug.loglog "Triangulated all #{points.length} points"
@@ -388,7 +389,7 @@ module MB::Geometry
     end
 
     def to_h
-      { points: self.to_a, outside_test: @outside_test, tangents: @tangents }
+      { points: self.to_a, outside_test: @outside_test, tangents: @tangents, midpoint: @midpoint }
     end
 
     # Call DelaunayDebug.save_json instead.
@@ -528,12 +529,19 @@ module MB::Geometry
         lhull = Hull.new(left, hull_id: 'L')
         rhull = Hull.new(right, hull_id: 'R')
 
+        mp = (left.last.x + right.first.x) / 2.0
+        @midpoint = mp
+
         DelaunayDebug.loglog { "\e[36mSplitting #{points.length} points into into \e[1m#{left.length}\e[22m and \e[1m#{right.length}\e[22m points...\e[0m" }
 
         left.each do |p| p.hull = nil end
         right.each do |p| p.hull = nil end
 
-        merge(triangulate(left), triangulate(right))
+        tleft = triangulate(left)
+        @midpoint = mp
+        tright = triangulate(right)
+        @midpoint = mp
+        merge(tleft, tright).tap { @midpoint = nil }
       end
 
     rescue => e
