@@ -346,8 +346,11 @@ module MB::Geometry
           if grow
             v2 = Vector[v[0] - xc, v[1] - yc]
             length = v2.magnitude + grow
-            length = 0 if length < 0
-            v = v2.normalize * length + vc
+            if length <= 0
+              v = vc
+            else
+              v = v2.normalize * length + vc
+            end
           end
           v[0..1]
         }
