@@ -270,6 +270,12 @@ module MB::Geometry
         @color = c
       end
 
+      # Returns true if a color has been set, overriding any automatically
+      # generated color.
+      def has_color?
+        !!@color
+      end
+
       # Moves this cell's input point to the given location.  If a point
       # already exists at that location, then a random offset will be added to
       # prevent duplicate input points.  Returns the final cell location.
@@ -567,12 +573,17 @@ module MB::Geometry
     end
 
     # Returns a Hash describing this Voronoi partition.  The resulting Hash
-    # should be readable by MB::Geometry::Generators.generate to reproduce the graph.
-    def to_h
+    # should be readable by MB::Geometry::Generators.generate to reproduce the
+    # graph.  If +:color+ is true, then the color of each cell will be stored,
+    # regardless of whether it was generated automatically or set manually.
+    def to_h(color: false)
+      points = @cells.map { |c|
+        (color || c.has_color?) ? c.to_h : c.point
+      }
       {
         name: @name,
         bounding_box: area_bounding_box,
-        points: @cells.map(&:point),
+        points: points,
         triangles: @delaunay_triangles&.map(&:to_a)&.sort,
       }
     end
