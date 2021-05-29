@@ -9,7 +9,6 @@ require 'rmagick'
 $LOAD_PATH << File.expand_path('../lib', __dir__)
 
 require 'mb-geometry'
-require 'mb-util'
 
 USAGE = <<-EOF
 Usage: #{$0} image.png voronoi.json
@@ -34,7 +33,6 @@ for row in 0...img.rows
     x = 2.0 * aspect * (col + 0.5) / img.columns - aspect
     y = -(2.0 * (row + 0.5) / img.rows - 1)
     px = img.pixel_color(col, row)
-    puts "#{col} #{row} x=#{x} y=#{y}"
 
     r = px.red.to_f / Magick::QuantumRange
     g = px.green.to_f / Magick::QuantumRange
@@ -46,7 +44,6 @@ for row in 0...img.rows
       y: y,
       color: [r, g, b, a],
     }
-    puts "  #{r.round(2)} #{g.round(2)} #{b.round(2)} #{a.round(2)}"
   end
 end
 
