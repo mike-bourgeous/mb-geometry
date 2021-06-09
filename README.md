@@ -82,6 +82,20 @@ v.save_svg('/tmp/pentagon_from_code.svg')
 v.save_delaunay_svg('/tmp/pentagon_delaunay.svg')
 ```
 
+### Voronoi diagram from image
+
+You can generate a JSON points file for a Voronoi diagram from a PNG (or other)
+image, then generate a pixel-art SVG from that (16x16 or smaller images
+recommended):
+
+```bash
+bin/png_to_voronoi.rb image.png image.json
+bin/voronoi_to_svg.rb image.json image.svg
+```
+
+![Smiley](readme_images/png_to_voronoi_example.png) &rarr; ![SVG Pixel Art Smiley](readme_images/png_to_voronoi_example.svg)
+
+
 ### Voronoi points file format
 
 The `bin/triangulate.rb`, `bin/voronoi_to_svg.rb`, and
