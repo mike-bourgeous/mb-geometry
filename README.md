@@ -93,7 +93,7 @@ bin/png_to_voronoi.rb image.png image.json
 bin/voronoi_to_svg.rb image.json image.svg
 ```
 
-![Smiley](readme_images/png_to_voronoi_example.png) &rarr; ![SVG Pixel Art Smiley](readme_images/png_to_voronoi_example.svg)
+| ![Smiley](readme_images/png_to_voronoi_example.png) | &rarr; | ![SVG Pixel Art Smiley](readme_images/png_to_voronoi_example.svg | width=50%)
 
 
 ### Voronoi points file format
