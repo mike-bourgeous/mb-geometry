@@ -488,12 +488,12 @@ module MB::Geometry
     # deduplicated by shifting if they are within 5 sigfigs of each other (any
     # closer and RubyVor can't triangulate them correctly).
     #
-    # Pass :rubyvor for +:engine+ to use the RubyVor gem for Delauney
-    # triangulation, :delaunay to use a slower pure Ruby implemtation written
+    # Pass :rubyvor for +:engine+ to use the RubyVor gem for Delaunay
+    # triangulation, :delaunay to use a slower pure Ruby implementation written
     # specifically for this library, or :delaunay_debug to use an even slower
     # debugging variant.  The default can be controlled by the DELAUNAY_ENGINE
     # environment variable (see MB::Geometry::Voronoi::DELAUNAY_ENGINE).
-    def initialize(points = [], reflect: true, sigfigs: 5, engine: DEFAULT_ENGINE)
+    def initialize(points = [], reflect: true, sigfigs: 5, dedupefigs: 5, engine: DEFAULT_ENGINE)
       @cells = []
       @pointset = {}
       @reflect = reflect
@@ -502,7 +502,7 @@ module MB::Geometry
       @sigscale = 10.0 ** (-@sigfigs)
       @squaredscale = (10 * @sigscale) ** 2
 
-      @dedupefigs = 5
+      @dedupefigs = dedupefigs
       @dedupescale = 0.001
       @point_offsets = [
         [@dedupescale, 0],

@@ -6,13 +6,51 @@ require 'mb-math'
 
 
 module MB::Geometry
-  # Pure Ruby Delaunay triangulation.  Fast version (see delaunay.rb and
-  # delaunay_debug.rb).
+  # Pure Ruby Delaunay triangulation.  This is an implementation of the
+  # divide-and-conquer algorithm described by Lee and Schachter in 1980.
+  #
+  # Example:
+  #
+  #     # Names are optional
+  #     points = [
+  #       [ 1, 2, 'A' ],
+  #       [ 5, 3, 'B' ],
+  #       [ 2, 4, 'C' ],
+  #       [ 0, 3, 'D' ],
+  #       [ 3, 5, 'E' ],
+  #     ]
+  #
+  #     triangulation = MB::Geometry::Delaunay.new(points)
+  #     triangulation.points.map { |p|
+  #       [
+  #         [p.x, p.y],
+  #         p.neighbors.map { |n| [n.x, n.y] }
+  #       ]
+  #     }.to_h
+  #
+  #     => {[1, 2]=>[[5, 3], [2, 4], [0, 3]],
+  #      [5, 3]=>[[1, 2], [3, 5], [2, 4]],
+  #      [2, 4]=>[[0, 3], [1, 2], [5, 3], [3, 5]],
+  #      [0, 3]=>[[1, 2], [2, 4], [3, 5]],
+  #      [3, 5]=>[[0, 3], [2, 4], [5, 3]]}
+  #
+  # See bin/triangulate.rb and the docs for the #initialize method for more
+  # information and examples on using this class.
+  #
+  # Two variants of this code are provided.  This is the faster version.  See
+  # delaunay_debug.rb for a slower version with verbose logging for debugging
+  # and visualizing the algorithm.  Note that the RubyVor gem's triangulation
+  # algorithm is much faster than this, but may be less precise.
+  #
+  # The 1980 description of the algorithm ("Delauney" spelling is expected in the URL):
+  # https://web.archive.org/web/20210506213702/http://www.personal.psu.edu/faculty/c/x/cxc11/AERSP560/DELAUNEY/13_Two_algorithms_Delauney.pdf
   class Delaunay
     CROSS_PRODUCT_ROUNDING = 12
     INPUT_POINT_ROUNDING = 9
     RADIUS_SIGFIGS = 12
 
+    # Used internally.  Represents a convex hull during the triangulation
+    # process.  See MB::Geometry::Delaunay#merge for how this is used.
     class Hull
       extend Forwardable
 
@@ -34,6 +72,8 @@ module MB::Geometry
         points.each do |p| p.hull = self end
       end
 
+      # Adds the points from +h+ to this Hull.  This is called *after* the
+      # merging algorithm has created edges between the two hulls.
       def add_hull(h)
         @rightmost = h.rightmost
         @points.concat(h.points)
@@ -104,6 +144,9 @@ module MB::Geometry
       end
     end
 
+    # Used internally.  Represents an input point and the links to the point's
+    # neighbors.  Provides methods for comparing angles between points and
+    # adding/removing neighbors to a point.
     class Point
       attr_reader :x, :y, :first, :idx, :name
 
@@ -261,8 +304,13 @@ module MB::Geometry
     end
 
 
+    # An Array of MB::Geometry::Delaunay::Point objects, in the original order given to
+    # #initialize.
+    attr_reader :points
 
-    attr_reader :points, :sorted_points
+    # An Array of MB::Geometry::Delaunay::Point objects, in the left-to-right sorted
+    # order used by the triangulation algorithm.
+    attr_reader :sorted_points
 
     # Initializes a triangulation of the given Array of +points+ of the
     # following form: [ [x1, y1], [x2, y2], ... ].
