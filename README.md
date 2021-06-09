@@ -93,6 +93,8 @@ bin/png_to_voronoi.rb image.png image.json
 bin/voronoi_to_svg.rb image.json image.svg
 ```
 
+| Input | | Output |
+| --- | --- | --- |
 | ![Smiley](readme_images/png_to_voronoi_example.png) | &rarr; | ![SVG Pixel Art Smiley](readme_images/png_to_voronoi_example.svg)
 
 
