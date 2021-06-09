@@ -3,7 +3,9 @@
 Recreational Ruby tools for geometry.  This ranges from simple functions like
 area calculation and line intersection, to Delaunay triangulation and Voronoi
 partitions.  This is companion code to my [educational video series about code
-and sound][0].  I've also [written more about this code on my blog][6].
+and sound][0], and this code was [featured in a video about Voronoi diagrams
+and Delaunay triangulations][8].  I've also [written more about this code on my
+blog][6].
 
 ```bash
 XRES=960 YRES=540 bin/voronoi_transitions.rb /tmp/polygon.gif \
@@ -375,3 +377,4 @@ See `README-Delaunay.md` for Delaunay tringulation references.
 [5]: https://github.com/abscondment/rubyvor
 [6]: https://blog.mikebourgeous.com/2021/04/18/animated-graphics-with-ruby-and-voronoi-partitions/
 [7]: https://github.com/mike-bourgeous/mb-geometry/blob/master/lib/mb/geometry/generators.rb#L80
+[8]: https://www.youtube.com/watch?v=jxOAU7YfypA
