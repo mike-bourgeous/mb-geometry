@@ -20,7 +20,7 @@ RSpec.describe('bin/voronoi_transitions.rb') do
   end
 
   it 'generates the expected number of frames' do
-    text = `bin/voronoi_transitions.rb #{tmpdir.shellescape}/test.svg test_data/3gon.yml 30 40 test_data/square.yml 50 55`
+    text = read_system("bin/voronoi_transitions.rb #{tmpdir.shellescape}/test.svg test_data/3gon.yml 30 40 test_data/square.yml 50 55")
     result = $?
 
     expect(result).to be_success

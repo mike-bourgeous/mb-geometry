@@ -5,7 +5,7 @@ RSpec.describe('bin/triangulate.rb') do
 
   [:rubyvor, :delaunay, :delaunay_debug].each do |engine|
     it "can parse all files from test_data/ using #{engine}" do
-      expect(system({ 'DELAUNAY_ENGINE' => engine.to_s }, "#{cmd.shellescape} #{all_test_files.map(&:shellescape).join(' ')} > /dev/null")).to eq(true)
+      expect(test_system({ 'DELAUNAY_ENGINE' => engine.to_s }, "#{cmd.shellescape} #{all_test_files.map(&:shellescape).join(' ')} > /dev/null")).to eq(true)
     end
 
     it "fails to parse an invalid file using #{engine}" do
