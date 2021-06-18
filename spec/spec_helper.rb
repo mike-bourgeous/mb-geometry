@@ -3,17 +3,6 @@ SimpleCov.start do
   SimpleCov.track_files("bin/*")
 end
 
-require 'shellwords'
-def test_system(env, cmd)
-  system(env, "#{File.join(__dir__, 'simplecov_runner.rb').shellescape} #{cmd}")
-end
-
-def read_system(cmd)
-  cmd = "#{File.join(__dir__, 'simplecov_runner.rb').shellescape} #{cmd}"
-  puts "Running #{cmd} with runner"
-  Kernel.send(:`, cmd)
-end
-
 # Ensure subprocesses load simplecov
 require 'shellwords'
 ENV['RUBYOPT'] = "-r#{File.join(__dir__, 'simplecov_helper.rb')} #{ENV['RUBYOPT']}".strip

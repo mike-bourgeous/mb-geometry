@@ -6,3 +6,7 @@ SimpleCov.start do
   SimpleCov.formatter SimpleCov::Formatter::SimpleFormatter
   SimpleCov.minimum_coverage 0
 end
+
+# This require line makes sure the original script file is processed by simplecov
+require File.expand_path($0, '.')
+exit 0
