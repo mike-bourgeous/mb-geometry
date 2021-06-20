@@ -416,12 +416,12 @@ module MB::Geometry
 
       # A short description of the cell.
       def to_s
-        "Cell[#{@index}]=#{@point.inspect}"
+        "Cell[#{@index}/#{@name}]=#{@point.inspect}"
       end
 
       # A detailed description of the cell.
       def inspect
-        "#<Geometry::Voronoi::Cell @index=#{@index} @point=#{@point} @voronoi=#{@voronoi.object_id} #{neighbors.size} neighbors>"
+        "#<Geometry::Voronoi::Cell @index=#{@index} @name=#{@name} @point=#{@point} @voronoi=#{@voronoi.object_id} #{neighbors.size} neighbors>"
       end
 
       def to_h
@@ -578,7 +578,8 @@ module MB::Geometry
     # regardless of whether it was generated automatically or set manually.
     def to_h(color: false)
       points = @cells.map { |c|
-        (color || c.has_color?) ? c.to_h : c.point
+        # TODO: There's probably a better way to include color selectively
+        (color || c.has_color?) ? c.to_h : [c.x, c.y, c.name].compact
       }
       {
         name: @name,
