@@ -25,6 +25,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency 'rubyvor', '0.1.4'
+  spec.add_runtime_dependency 'georuby' # rubyvor depends on GeoRuby which hasn't been updated
 
   spec.add_runtime_dependency 'mb-math'
   spec.add_runtime_dependency 'mb-util'
