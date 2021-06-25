@@ -1,5 +1,7 @@
 # mb-geometry
 
+[![Tests](https://github.com/mike-bourgeous/mb-geometry/actions/workflows/test.yml/badge.svg)](https://github.com/mike-bourgeous/mb-geometry/actions/workflows/test.yml)
+
 Recreational Ruby tools for geometry.  This ranges from simple functions like
 area calculation and line intersection, to Delaunay triangulation and Voronoi
 partitions.  This is companion code to my [educational video series about code

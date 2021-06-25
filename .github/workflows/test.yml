@@ -1,0 +1,29 @@
+# See https://github.com/actions/starter-workflows/blob/1dd15d20337289b85cecafdde824b3a44bc8ed27/ci/ruby.yml
+# which was used as a reference
+name: Tests
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ruby-version: ['2.7', '3.0']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+      - name: Install apt deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install ffmpeg gnuplot-nox
+      - name: Install gem deps
+        run: bundle install
+      - name: Run tests
+        run: bundle exec rspec
