@@ -8,9 +8,9 @@ GIT
 
 GIT
   remote: https://github.com/mike-bourgeous/mb-util.git
-  revision: 993d042b8e966d7967fac08338d7fc658bfb6af0
+  revision: e083d47981e5930e9abb869d5a85d8fc2f6c620d
   specs:
-    mb-util (0.0.1.usegit)
+    mb-util (0.0.2.usegit)
 
 PATH
   remote: .
@@ -71,7 +71,7 @@ PLATFORMS
 DEPENDENCIES
   mb-geometry!
   mb-math!
-  mb-util!
+  mb-util (>= 0.0.2.usegit)!
   pry
   pry-byebug
   rake (~> 13.0)
@@ -80,4 +80,4 @@ DEPENDENCIES
   simplecov (~> 0.21.2)
 
 BUNDLED WITH
-   2.2.3
+   2.1.4

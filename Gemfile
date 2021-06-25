@@ -8,4 +8,4 @@ git_source(:github) {|repo_name| "https://github.com/#{repo_name}" }
 gemspec
 
 gem 'mb-math', github: 'mike-bourgeous/mb-math.git'
-gem 'mb-util', github: 'mike-bourgeous/mb-util.git'
+gem 'mb-util', '>= 0.0.2.usegit', github: 'mike-bourgeous/mb-util.git'
