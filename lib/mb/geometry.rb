@@ -8,31 +8,6 @@ require_relative 'geometry/version'
 module MB
   # Inefficient algorithms for some basic geometric operations.
   module Geometry
-    # Geometry DSL methods to add to Numeric.
-    #
-    # TODO: Move to mb-math
-    module NumericAddons
-      # Returns a non-augmented rotation matrix of the current numeric in radians.
-      #
-      # Example:
-      # 1.degree.rotation
-      # => Matrix[....]
-      #
-      # 90.degree.rotation * Vector[1, 0]
-      # => Vector[0, 1]
-      def rotation
-        # Values are rounded to 12 decimal places so that exact values like 0,
-        # 0.5, and 1 come out whole.
-        a = self.to_f
-        Matrix[
-          [Math.cos(a).round(12), -Math.sin(a).round(12)],
-          [Math.sin(a).round(12), Math.cos(a).round(12)]
-        ]
-      end
-    end
-
-    Numeric.include(NumericAddons)
-
     class << self
       # Finds the line intersection, if any, between two lines given coordinates
       # in the form used by rubyvor (either [a, b, c] or [:l, a, b, c], using

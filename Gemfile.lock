@@ -1,9 +1,10 @@
 GIT
   remote: https://github.com/mike-bourgeous/mb-math.git
-  revision: a77dee42fc4e58744afe11be321bf59dea50e6b4
+  revision: f461cbf8ae563675abaf4a2fe0dfe8d97e37d8e3
   specs:
-    mb-math (0.0.1.usegit)
+    mb-math (0.0.3.usegit)
       cmath (~> 1.0.0)
+      mb-util (>= 0.1.0.usegit)
       numo-narray (~> 0.9.1)
 
 GIT
@@ -17,7 +18,7 @@ PATH
   specs:
     mb-geometry (0.0.2.usegit)
       georuby
-      mb-math
+      mb-math (>= 0.0.3.usegit)
       mb-util (>= 0.1.0.usegit)
       rubyvor (= 0.1.4)
 
