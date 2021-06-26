@@ -9,6 +9,8 @@ module MB
   # Inefficient algorithms for some basic geometric operations.
   module Geometry
     # Geometry DSL methods to add to Numeric.
+    #
+    # TODO: Move to mb-math
     module NumericAddons
       # Returns a non-augmented rotation matrix of the current numeric in radians.
       #

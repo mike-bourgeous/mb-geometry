@@ -79,27 +79,11 @@ class Transitionator
 
     puts "Generating \e[1m#{@total_frames}\e[0m images."
 
-    existing_files = Dir["#{@out_prefix}_#{'?' * @digits}.svg"].sort
-    unless existing_files.empty?
-      loop do
-        # TODO: Extract this prompting and checking code into a helper function in the mb-util gem for use by all scripts in bin/?
-        STDOUT.write "\e[1;33m#{existing_files.length}\e[0m output files like \e[33m#{existing_files.first}\e[0m exist.  Remove them and proceed? \e[1m[Y / N]\e[0m "
-        STDOUT.flush
-        reply = STDIN.readline
-
-        case reply
-        when /\A[Yy]/
-          puts "\e[1;31mDeleting files\e[0;1m and \e[32mcontinuing.\e[0m"
-          existing_files.each do |f|
-            File.unlink(f)
-          end
-          break
-
-        when /\A[Nn]/
-          puts "\e[1;33mAborting.\e[0m"
-          exit 1
-        end
-      end
+    begin
+      MB::U.prevent_mass_overwrite("#{@out_prefix}_#{'?' * @digits}.svg", prompt: true)
+    rescue MB::Util::FileMethods::FileExistsError
+      puts "\e[1;33mAborting.\e[0m"
+      exit 1
     end
 
     # Load points and compute bounding box

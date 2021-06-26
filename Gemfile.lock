@@ -8,9 +8,9 @@ GIT
 
 GIT
   remote: https://github.com/mike-bourgeous/mb-util.git
-  revision: e083d47981e5930e9abb869d5a85d8fc2f6c620d
+  revision: d5da72e5b830cefb31f9b565eb3342bb59da7ac5
   specs:
-    mb-util (0.0.2.usegit)
+    mb-util (0.1.0.usegit)
 
 PATH
   remote: .
@@ -18,7 +18,7 @@ PATH
     mb-geometry (0.0.2.usegit)
       georuby
       mb-math
-      mb-util
+      mb-util (>= 0.1.0.usegit)
       rubyvor (= 0.1.4)
 
 GEM
@@ -71,7 +71,7 @@ PLATFORMS
 DEPENDENCIES
   mb-geometry!
   mb-math!
-  mb-util (>= 0.0.2.usegit)!
+  mb-util!
   pry
   pry-byebug
   rake (~> 13.0)

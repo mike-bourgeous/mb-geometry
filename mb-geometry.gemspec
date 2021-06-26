@@ -28,7 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'georuby' # rubyvor depends on GeoRuby which hasn't been updated
 
   spec.add_runtime_dependency 'mb-math'
-  spec.add_runtime_dependency 'mb-util'
+  spec.add_runtime_dependency 'mb-util', '>= 0.1.0.usegit'
 
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'pry'
