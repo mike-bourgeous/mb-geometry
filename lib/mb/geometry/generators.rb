@@ -64,7 +64,7 @@ module MB
         # region, using the given pseudorandom number generator.  If Integers
         # are given for both sides of a range, then that range will only
         # generate Integers.
-        def random_points(count, xmin: -1.0, xmax: 1.0, ymin: -1.0, ymax: 1.0, random: Random::DEFAULT)
+        def random_points(count, xmin: -1.0, xmax: 1.0, ymin: -1.0, ymax: 1.0, random: Random)
           xrange = xmin..xmax
           yrange = ymin..ymax
 
