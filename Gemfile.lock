@@ -59,7 +59,7 @@ GEM
       byebug (~> 11.0)
       pry (>= 0.13, < 0.15)
     rake (13.2.1)
-    rmagick (6.1.1)
+    rmagick (5.5.0)
       observer (~> 0.1)
       pkg-config (~> 1.4)
     rspec (3.10.0)
