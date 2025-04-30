@@ -31,7 +31,7 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency 'numo-narray', '~> 0.9.2.1'
 
-  spec.add_runtime_dependency 'mb-math', '>= 0.2.2.usegit'
+  spec.add_runtime_dependency 'mb-math', '>= 0.2.3.usegit'
   spec.add_runtime_dependency 'mb-util', '>= 0.1.20.usegit'
 
   spec.add_development_dependency 'rake', '~> 13.0'
