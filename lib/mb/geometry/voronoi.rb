@@ -212,14 +212,19 @@ module MB::Geometry
       # An optional name that may have been given to this cell.
       attr_accessor :name
 
+      # Optional data to associate with this cell, e.g. a Hash of measurement
+      # values, a Z coordinate, etc.
+      attr_reader :data
+
       # Initializes a cell with the given containing partition, input point,
-      # and cell index.
-      def initialize(voronoi:, point:, index:, name:, color:)
+      # and cell index, with optional name, color, and user data.
+      def initialize(voronoi:, point:, index:, name:, color:, data:)
         @voronoi = voronoi
         @point = point
         @index = index
         @name = name
         @color = color
+        @data = data
         reset
       end
 
@@ -325,7 +330,7 @@ module MB::Geometry
       #
       # If +:grow+ is a number, then it will be added to the length of each
       # vector from the chosen center.  This allows shrinking or growing a cell
-      # by an absolute number of units rather than by a scaling facter.
+      # by an absolute number of units rather than by a scaling factor.
       #
       # If +:centroid+ is true, then the scaling will be centered around the
       # polygon's center point, instead of the Cell's input point.
@@ -654,7 +659,8 @@ module MB::Geometry
     # will be raised if that still does not result in a unique point.
     #
     # Either pass X, Y, and an optional name; a Hash containing :x, :y, and
-    # optionally :name and/or :color; or a spec for MB::Geometry::Generators.generate.
+    # optionally :name, :data, and/or :color; or a spec for
+    # MB::Geometry::Generators.generate.
     def add_point(x_or_hash, y_or_nil = nil, name = nil, reset: true)
       case x_or_hash
       when Hash
@@ -667,6 +673,7 @@ module MB::Geometry
         y = x_or_hash[:y]
         name = x_or_hash[:name]
         color = x_or_hash[:color]
+        data = x_or_hash[:data]
 
       else
         x = x_or_hash
@@ -675,7 +682,7 @@ module MB::Geometry
 
       p = find_safe_point(x.round(9), y.round(9), cells.length)
 
-      Cell.new(voronoi: self, point: p, index: @cells.size, name: name, color: color).tap { |c|
+      Cell.new(voronoi: self, point: p, index: @cells.size, name: name, color: color, data: data).tap { |c|
         @cells << c
         @pointset[p] = c
 
@@ -839,6 +846,10 @@ module MB::Geometry
     # blended color from the neighboring cells.  In this case :alpha is passed
     # to MB::Geometry::Voronoi::Cell#color.
     #
+    # if :data is true, then the Hash also contains a :data key with the
+    # weighted sum of whatever was in the :data field in the input points,
+    # using MB::M.weighted_sum().
+    #
     # Note: this might not behave the way you expect for sampling points
     # outside the bounding box of the existing cells in the Voronoi diagram.
     # For example, you might expect a point that lies on the same angle from
@@ -852,7 +863,7 @@ module MB::Geometry
     # Warning: this modifies the Voronoi diagram and is thus not thread-safe.
     #
     # See https://en.wikipedia.org/wiki/Natural_neighbor_interpolation
-    def natural_neighbors(x, y, color: false, alpha: nil)
+    def natural_neighbors(x, y, color: false, data: false, alpha: nil)
       prior_version = @version
       prior_triangles = delaunay_triangles
       prior_vertices = vertices
@@ -954,12 +965,9 @@ module MB::Geometry
           color[2] += (base[2] ** 0.4545) * weight
 
           if base[3]
-            if color[3]
-              color[3] += base[3] * weight
-            else
-              # FIXME: weight alpha only based on cells that have an alpha?
-              color[3] = base[3]
-            end
+            # FIXME: weight alpha only based on cells that have an alpha?
+            color[3] ||= 0
+            color[3] += base[3] * weight
           end
         }
 
@@ -967,6 +975,11 @@ module MB::Geometry
         cell_color[0] **= 2.2
         cell_color[1] **= 2.2
         cell_color[2] **= 2.2
+      end
+
+      if data
+        input_data = weights.map { |cell_idx, weight| @cells[cell_idx].data && [@cells[cell_idx].data, weight] }.compact.to_h
+        cell_data = MB::M.weighted_sum(input_data.keys, input_data.values)
       end
 
       # FIXME: disable vertex coalescing while calculating natural neighbors,
@@ -981,6 +994,7 @@ module MB::Geometry
         point: [x, y],
         vertices: new_vertices,
         color: cell_color,
+        data: cell_data,
       }
 
     rescue => e

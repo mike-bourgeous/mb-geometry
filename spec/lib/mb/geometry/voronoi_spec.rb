@@ -101,6 +101,26 @@ RSpec.describe(MB::Geometry::Voronoi) do
             expect(nn).to include(:weights)
           end
         end
+
+        it 'can interpolate colors' do
+          v = MB::Geometry::Voronoi.new(
+            [
+              {x: -0.5, y: 0, color: [1, 1, 0, 1]},
+              {x: 0.5, y: 0, color: [0, 1, 1, 0.5]},
+            ]
+          )
+          expect(MB::M.round(v.natural_neighbors(0, 0, color: true)[:color], 2)).to eq([0.22, 1, 0.22, 0.75])
+        end
+
+        it 'can interpolate custom data' do
+          v = MB::Geometry::Voronoi.new(
+            [
+              {x: -0.5, y: 0, r: 1, g: 1, b: 0, a: 1, data: {a: 1, b: [2, 3]}},
+              {x: 0.5, y: 0, r: 0, g: 0, b: 1, a: 0.5, data: {a: 2, b: [4, 6]}},
+            ]
+          )
+          expect(MB::M.round(v.natural_neighbors(0, 0, data: true)[:data], 6)).to eq({a: 1.5, b: [3, 4.5]})
+        end
       end
 
       describe '#cells' do
