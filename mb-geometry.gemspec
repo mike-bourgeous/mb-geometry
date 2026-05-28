@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'csv', '~> 3.3', '>= 3.3.3'
 
   spec.add_runtime_dependency 'rubyvor', '0.1.4'
+  spec.add_runtime_dependency 'libxml-ruby', '< 6' # need version 5.x for rubyvor to load
   spec.add_runtime_dependency 'georuby' # rubyvor depends on GeoRuby which hasn't been updated
 
   spec.add_runtime_dependency 'numo-narray', '~> 0.9.2.1'

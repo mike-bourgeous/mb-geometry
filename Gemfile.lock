@@ -23,6 +23,7 @@ PATH
     mb-geometry (0.1.0.usegit)
       csv (~> 3.3, >= 3.3.3)
       georuby
+      libxml-ruby (< 6)
       mb-math (>= 0.2.3.usegit)
       mb-util (>= 0.1.20.usegit)
       numo-narray (~> 0.9.2.1)
